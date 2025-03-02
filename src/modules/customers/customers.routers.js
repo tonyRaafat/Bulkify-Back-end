@@ -38,16 +38,24 @@ router.get("/refreshtoken/:rftoken", customerController.refreshToken);
 router.get(
   "/profile",
   auth(["customer"]),
-  authorize({ customer: ["verified"] }),
+  authorize({ customer: ["all"] }),
   customerController.getProfile
 );
 
 router.put(
   "/profile",
   auth(["customer"]),
-  authorize({ customer: ["verified"] }),
+  authorize({ customer: ["all"] }),
   validate(updateCustomerSchema),
   customerController.updateProfile
+);
+
+router.delete(
+  "/profile",
+  auth(["customer"]),
+  authorize({ customer: ["all"] }),
+  validate(updateCustomerSchema),
+  customerController.deleteAccount
 );
 
 export default router;

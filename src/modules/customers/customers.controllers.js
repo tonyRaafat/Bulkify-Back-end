@@ -438,3 +438,25 @@ export const updateProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Delete customer account
+ * Allows customers to delete their own account
+ */
+export const deleteAccount = async (req, res, next) => {
+  try {
+    const customer = await Customer.findByIdAndDelete(req.user._id);
+
+    if (!customer) {
+      throw throwError("Customer not found", 404);
+    }
+    await CustomerPurchase.deleteMany({ customerId: req.user._id });
+    await ProductRate.deleteMany({ customerId: req.user._id });
+
+    res.status(200).json({
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
