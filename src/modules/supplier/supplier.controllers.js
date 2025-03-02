@@ -4,6 +4,8 @@ import { Supplier } from "../../../database/models/supplier.model.js";
 import { throwError } from "../../utils/throwerror.js";
 import { sendEmail, sendVerificationEmail } from "../../utils/emailService.js";
 
+const BASE_URL = "https://bulkify-back-end.vercel.app";
+
 /**
  * Supplier signup controller
  */
@@ -25,11 +27,11 @@ export const signup = async (req, res, next) => {
     const token = jwt.sign({ email }, process.env.JWT_SECRET, {
       expiresIn: "3m",
     });
-    const verifyLink = `http://localhost:3000/api/v1/suppliers/verifyEmail/${token}`;
+    const verifyLink = `${BASE_URL}/api/v1/suppliers/verifyEmail/${token}`;
     const rftoken = jwt.sign({ email }, process.env.JWT_SECRET + "refresh", {
       expiresIn: "3m",
     });
-    const resendLink = `http://localhost:3000/api/v1/suppliers/refreshtoken/${rftoken}`;
+    const resendLink = `${BASE_URL}/api/v1/suppliers/refreshtoken/${rftoken}`;
 
     // Send verification email with styled template
     await sendVerificationEmail(email, verifyLink, resendLink);
@@ -61,7 +63,7 @@ export const verifyEmail = async (req, res, next) => {
             expiresIn: "3m",
           }
         );
-        const rflink = `http://localhost:3000/api/v1/suppliers/refreshtoken/${rftoken}`;
+        const rflink = `${BASE_URL}/api/v1/suppliers/refreshtoken/${rftoken}`;
 
         throw throwError({
           message: "Verification link has expired",
@@ -112,7 +114,7 @@ export const refreshToken = async (req, res, next) => {
     const token = jwt.sign({ email: decoded.email }, process.env.JWT_SECRET, {
       expiresIn: "3m",
     });
-    const verifyLink = `http://localhost:3000/api/v1/suppliers/verifyEmail/${token}`;
+    const verifyLink = `${BASE_URL}/api/v1/suppliers/verifyEmail/${token}`;
 
     // Send resend verification email with styled template
     await sendVerificationEmail(decoded.email, verifyLink);
@@ -241,11 +243,11 @@ export const login = async (req, res, next) => {
       const token = jwt.sign({ email }, process.env.JWT_SECRET, {
         expiresIn: "3m",
       });
-      const verifyLink = `http://localhost:3000/api/v1/suppliers/verifyEmail/${token}`;
+      const verifyLink = `${BASE_URL}/api/v1/suppliers/verifyEmail/${token}`;
       const rftoken = jwt.sign({ email }, process.env.JWT_SECRET + "refresh", {
         expiresIn: "3m",
       });
-      const resendLink = `http://localhost:3000/api/v1/suppliers/refreshtoken/${rftoken}`;
+      const resendLink = `${BASE_URL}/api/v1/suppliers/refreshtoken/${rftoken}`;
 
       // Resend verification email
       await sendVerificationEmail(email, verifyLink, resendLink);

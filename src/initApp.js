@@ -25,6 +25,14 @@ export const initApp = (app) => {
   app.use("/api/v1/suppliers", supplierRouter);
   app.use("/api/v1/products", productRouter);
 
+  app.get("/", (req, res) => {
+    res.status(200).json({
+      status: "success",
+      message: "Welcome to Bulkify API",
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // Not found handler - returns JSON
   app.all("*", (req, res) => {
     res.status(404).json({

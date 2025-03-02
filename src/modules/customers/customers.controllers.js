@@ -15,6 +15,9 @@ const COORDINATE_LIMITS = {
   MIN_LATITUDE: -90,
   MAX_LATITUDE: 90,
 };
+
+const BASE_URL = "https://bulkify-back-end.vercel.app";
+
 /**
  * Customer registration controller
  */
@@ -126,11 +129,11 @@ export const register = async (req, res, next) => {
     const token = jwt.sign({ email }, process.env.JWT_SECRET, {
       expiresIn: "3m",
     });
-    const verifyLink = `http://localhost:3000/api/v1/customers/verifyEmail/${token}`;
+    const verifyLink = `${BASE_URL}/api/v1/customers/verifyEmail/${token}`;
     const rftoken = jwt.sign({ email }, process.env.JWT_SECRET + "refresh", {
       expiresIn: "3m",
     });
-    const resendLink = `http://localhost:3000/api/v1/customers/refreshtoken/${rftoken}`;
+    const resendLink = `${BASE_URL}/api/v1/customers/refreshtoken/${rftoken}`;
 
     // Send verification email
     await sendEmail(email, "Verify Your Email", {
@@ -179,7 +182,7 @@ export const verifyEmail = async (req, res, next) => {
             expiresIn: "3m",
           }
         );
-        const rflink = `http://localhost:3000/api/v1/customers/refreshtoken/${rftoken}`;
+        const rflink = `${BASE_URL}/api/v1/customers/refreshtoken/${rftoken}`;
 
         throw throwError({
           message: "Verification link has expired",
@@ -226,7 +229,7 @@ export const refreshToken = async (req, res, next) => {
     const token = jwt.sign({ email: decoded.email }, process.env.JWT_SECRET, {
       expiresIn: "3m",
     });
-    const link = `http://localhost:3000/api/v1/customers/verifyEmail/${token}`;
+    const link = `${BASE_URL}/api/v1/customers/verifyEmail/${token}`;
 
     await sendEmail(decoded.email, "Verify Email", {
       text: `Verify your email: ${link}`,
@@ -299,11 +302,11 @@ export const login = async (req, res, next) => {
       const token = jwt.sign({ email }, process.env.JWT_SECRET, {
         expiresIn: "3m",
       });
-      const verifyLink = `http://localhost:3000/api/v1/customers/verifyEmail/${token}`;
+      const verifyLink = `${BASE_URL}/api/v1/customers/verifyEmail/${token}`;
       const rftoken = jwt.sign({ email }, process.env.JWT_SECRET + "refresh", {
         expiresIn: "3m",
       });
-      const resendLink = `http://localhost:3000/api/v1/customers/refreshtoken/${rftoken}`;
+      const resendLink = `${BASE_URL}/api/v1/customers/refreshtoken/${rftoken}`;
 
       // Resend verification email
       await sendEmail(email, "Verify Your Email", {
@@ -430,6 +433,28 @@ export const updateProfile = async (req, res, next) => {
     res.status(200).json({
       message: "Profile updated successfully",
       customer,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete customer account
+ * Allows customers to delete their own account
+ */
+export const deleteAccount = async (req, res, next) => {
+  try {
+    const customer = await Customer.findByIdAndDelete(req.user._id);
+
+    if (!customer) {
+      throw throwError("Customer not found", 404);
+    }
+    await CustomerPurchase.deleteMany({ customerId: req.user._id });
+    await ProductRate.deleteMany({ customerId: req.user._id });
+
+    res.status(200).json({
+      message: "Account deleted successfully",
     });
   } catch (error) {
     next(error);

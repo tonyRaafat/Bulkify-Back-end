@@ -101,9 +101,8 @@ export const authorize = (allowedRoles = {}) => {
 
       // For customer authorization
       else if (userType === "customer") {
-        // Add any specific customer role checks here
-        if (!allowedRoles.customer.includes("all")) {
-          throw throwError("Unauthorized customer access", 403);
+        if (!user.isVerified && allowedRoles.customer.includes("verified")) {
+          throw throwError("Customer not verified", 403);
         }
       }
 

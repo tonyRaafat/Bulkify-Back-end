@@ -5,16 +5,31 @@ export const dbConnection = async () => {
     mongoose.set("strictQuery", false);
     const conn = await mongoose.connect(process.env.MONGODB_URI_ONLINE, {
       dbName: "Bulkify",
-      serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds
-      socketTimeoutMS: 45000, // Increase socket timeout to 45 seconds
+      serverSelectionTimeoutMS: 40000, // Increase timeout to 40 seconds
+      socketTimeoutMS: 55000, // Increase socket timeout to 55 seconds
       family: 4, // Use IPv4, skip trying IPv6
     });
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
 
-    // Handle connection errors after initial connection
     mongoose.connection.on("error", (err) => {
       console.error("MongoDB connection error:", err);
+      console.log("Attempting to reconnect to MongoDB...");
+
+      setTimeout(async () => {
+        try {
+          await mongoose.disconnect();
+          await mongoose.connect(process.env.MONGODB_URI_ONLINE, {
+            dbName: "Bulkify",
+            serverSelectionTimeoutMS: 300000,
+            socketTimeoutMS: 450000,
+            family: 4,
+          });
+          console.log("MongoDB reconnected successfully");
+        } catch (reconnectError) {
+          console.error("Failed to reconnect to MongoDB:", reconnectError);
+        }
+      }, 5000);
     });
 
     mongoose.connection.on("disconnected", () => {
