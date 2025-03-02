@@ -5,8 +5,8 @@ export const dbConnection = async () => {
     mongoose.set("strictQuery", false);
     const conn = await mongoose.connect(process.env.MONGODB_URI_ONLINE, {
       dbName: "Bulkify",
-      serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds
-      socketTimeoutMS: 45000, // Increase socket timeout to 45 seconds
+      serverSelectionTimeoutMS: 40000, // Increase timeout to 40 seconds
+      socketTimeoutMS: 55000, // Increase socket timeout to 55 seconds
       family: 4, // Use IPv4, skip trying IPv6
     });
 
