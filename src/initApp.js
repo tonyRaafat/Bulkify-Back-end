@@ -15,14 +15,7 @@ export const initApp = (app) => {
   dbConnection();
 
   // Middlewares
-  app.use(
-    cors({
-      origin: "*", // Allow all origins
-      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: "*", // Allow all headers
-      credentials: true, // Allow credentials (cookies, etc.)
-    })
-  );
+  app.use(cors());
   app.use(express.json());
 
   // Routes
