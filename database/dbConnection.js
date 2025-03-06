@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 export const dbConnection = async () => {
   try {
     mongoose.set("strictQuery", false);
-    const conn = await mongoose.connect(process.env.MONGODB_URI_ONLINE, {
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
       dbName: "Bulkify",
       serverSelectionTimeoutMS: 40000, // Increase timeout to 40 seconds
       socketTimeoutMS: 55000, // Increase socket timeout to 55 seconds
@@ -19,7 +19,7 @@ export const dbConnection = async () => {
       setTimeout(async () => {
         try {
           await mongoose.disconnect();
-          await mongoose.connect(process.env.MONGODB_URI_ONLINE, {
+          await mongoose.connect(process.env.MONGODB_URI, {
             dbName: "Bulkify",
             serverSelectionTimeoutMS: 300000,
             socketTimeoutMS: 450000,

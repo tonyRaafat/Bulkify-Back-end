@@ -11,7 +11,6 @@ export const createProduct = async (req, res, next) => {
   try {
     const { name, description, price, quantity, bulkThreshold, categoryId } =
       req.body;
-
     // Check if product exists
     const existingProduct = await Product.findOne({
       name: name.toLowerCase(),
@@ -22,14 +21,13 @@ export const createProduct = async (req, res, next) => {
       throw throwError("Product already exists for this supplier", 409);
     }
 
-    // Handle image upload
-    // let imageSource;
-    // if (req.file) {
-    //   const { secure_url } = await cloudinary.uploader.upload(req.file.path, {
-    //     folder: `Bulkify/products/${req.user._id}`,
-    //   });
-    //   imageSource = secure_url;
-    // }
+    if (!req.files || !req.files.length == 0) {
+      throw throwError("Add at least on photo", 400);
+    }
+    if (req.files.length > 5) {
+      throw throwError("At most 5 photos", 400);
+    }
+
     let imageSource = [];
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
