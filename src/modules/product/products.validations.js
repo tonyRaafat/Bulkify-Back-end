@@ -23,9 +23,25 @@ export const createProductSchema = {
     categoryId: Joi.string().hex().length(24).required(),
   }),
   files: Joi.object({
-    image: Joi.required().messages({
-      "any.required": "Product image is required",
-    }),
+    images: Joi.array().items(
+      Joi.object({
+        mimetype: Joi.string()
+          .valid("image/png", "image/jpeg", "image/jpg", "image/webp")
+          .required()
+          .messages({
+            "any.only": "Invalid file type. Only PNG, JPEG, JPG, and WEBP are allowed",
+            "any.required": "Product image is required",
+          }),
+      })
+    )
+      .min(1)
+      .max(5)
+      .required()
+      .messages({
+        "array.min": "At least one product image is required",
+        "array.max": "You can upload up to 5 product images",
+        "any.required": "Product images are required",
+      }),
   }),
   headers: generalField.headers,
 };
