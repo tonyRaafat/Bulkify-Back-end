@@ -20,7 +20,7 @@ router.post(
   "/",
   auth(["supplier"]),
   authorize({ supplier: ["verified"] }),
-  multerHost(validExtension.image).single("image"),
+  multerHost(validExtension.image).array("images", 5),
   validate(createProductSchema),
   productController.createProduct
 );

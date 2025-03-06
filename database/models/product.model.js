@@ -20,9 +20,12 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    imageSource: {
-      type: String,
-    },
+    imageSource: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
     bulkThreshold: {
       type: Number,
       required: true,

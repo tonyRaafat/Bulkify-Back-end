@@ -23,12 +23,21 @@ export const createProduct = async (req, res, next) => {
     }
 
     // Handle image upload
-    let imageSource;
-    if (req.file) {
-      const { secure_url } = await cloudinary.uploader.upload(req.file.path, {
-        folder: `Bulkify/products/${req.user._id}`,
-      });
-      imageSource = secure_url;
+    // let imageSource;
+    // if (req.file) {
+    //   const { secure_url } = await cloudinary.uploader.upload(req.file.path, {
+    //     folder: `Bulkify/products/${req.user._id}`,
+    //   });
+    //   imageSource = secure_url;
+    // }
+    let imageSource = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const { secure_url } = await cloudinary.uploader.upload(file.path, {
+          folder: `Bulkify/products/${req.user._id}`,
+        });
+        imageSource.push(secure_url);
+      }
     }
 
     // Create product with description

@@ -1,7 +1,7 @@
 import express from "express";
 import { initApp } from "./src/initApp.js";
 import { findAvailablePort } from "./src/utils/portFinder.js";
-
+// 
 const app = express();
 const startServer = async () => {
   try {
