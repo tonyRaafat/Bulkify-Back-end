@@ -21,12 +21,13 @@ export const createProduct = async (req, res, next) => {
       throw throwError("Product already exists for this supplier", 409);
     }
 
-    if (!req.files || !req.files.length == 0) {
-      throw throwError("Add at least on photo", 400);
+    if (!req.files || req.files.length === 0) {
+      throw throwError("At least one photo is required", 400);
     }
+
     if (req.files.length > 5) {
       throw throwError("At most 5 photos", 400);
-    }
+    } 
 
     let imageSource = [];
     if (req.files && req.files.length > 0) {
