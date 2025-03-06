@@ -39,6 +39,7 @@ export const createProductSchema = {
       .required()
       .messages({
         "array.min": "At least one product image is required",
+        "array.max": "You can upload up to 5 product images",
         "any.required": "Product images are required",
       }),
   }),
