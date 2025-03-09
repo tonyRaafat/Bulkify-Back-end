@@ -91,7 +91,7 @@ export const updateSupplierSchema = {
       street: Joi.string().pattern(streetRegex).messages({
         "string.pattern.base": "Street name must be valid",
       }),
-      homeNumber: Joi.string().pattern(homeNumberRegex).messages({
+      homeNumber: Joi.numeber().messages({
         "string.pattern.base": "Home number must be valid",
       }),
     }),
