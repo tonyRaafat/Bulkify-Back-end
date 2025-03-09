@@ -8,14 +8,6 @@ import { sendEmail } from "../../utils/emailService.js";
 import { CustomerPurchase } from "../../../database/models/customerPurchase.model.js";
 import { ProductRate } from "../../../database/models/productRate.model.js";
 
-// Add these constants for coordinate validation
-const COORDINATE_LIMITS = {
-  MIN_LONGITUDE: -180,
-  MAX_LONGITUDE: 180,
-  MIN_LATITUDE: -90,
-  MAX_LATITUDE: 90,
-};
-
 const BASE_URL = "https://bulkify-back-end.vercel.app";
 
 /**

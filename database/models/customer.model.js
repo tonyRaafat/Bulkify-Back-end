@@ -26,11 +26,6 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    nationalId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     city: {
       type: String,
       required: true,
