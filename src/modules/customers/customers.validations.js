@@ -5,6 +5,7 @@ import {
   nameRegex,
   passwordRegex,
   phoneRegex,
+  streetRegex,
 } from "../../constants/constants.js";
 
 export const updateCustomerSchema = {
@@ -82,120 +83,100 @@ export const updateCustomerSchema = {
   headers: generalField.headers,
 };
 
-export const registerValidation = Joi.object({
-  firstName: Joi.string()
-    .min(2)
-    .max(30)
-    .pattern(nameRegex)
-    .required()
-    .messages({
-      "string.min": "First name must be at least 2 characters long",
-      "string.max": "First name cannot exceed 30 characters",
-      "string.pattern.base":
-        "First name must contain only English or Arabic letters",
-      "any.required": "First name is required",
-    }),
-
-  lastName: Joi.string().min(2).max(30).pattern(nameRegex).required().messages({
-    "string.min": "Last name must be at least 2 characters long",
-    "string.max": "Last name cannot exceed 30 characters",
-    "string.pattern.base":
-      "Last name must contain only English or Arabic letters",
-    "any.required": "Last name is required",
-  }),
-
-  email: Joi.string().pattern(emailRegex).lowercase().required().messages({
-    "string.pattern.base": "Please provide a valid email address",
-    "any.required": "Email is required",
-  }),
-
-  password: Joi.string().min(8).pattern(passwordRegex).required().messages({
-    "string.pattern.base":
-      "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character",
-    "any.required": "Password is required",
-  }),
-
-  age: Joi.number().min(18).max(100).required().messages({
-    "number.min": "You must be at least 18 years old",
-    "number.max": "Age cannot exceed 100 years",
-    "any.required": "Age is required",
-  }),
-
-  gender: Joi.string().valid("Male", "Female").required().messages({
-    "any.only": "Gender must be either Male, Female",
-    "any.required": "Gender is required",
-  }),
-
-  phoneNumber: Joi.string().pattern(phoneRegex).required().messages({
-    "string.pattern.base": "Please provide a valid phone number",
-    "any.required": "Phone number is required",
-  }),
-
-  city: Joi.string().pattern(nameRegex).required().messages({
-    "string.pattern.base": "City must contain only English or Arabic letters",
-    "any.required": "City is required",
-  }),
-
-  street: Joi.string().pattern(nameRegex).required().messages({
-    "string.pattern.base": "Street must contain only English or Arabic letters",
-    "any.required": "Street is required",
-  }),
-
-  homeNumber: Joi.number().required().messages({
-    "any.number": "Home number must be number",
-    "any.required": "Home number is required",
-  }),
-
-  coordinates: Joi.array()
-    .items(
-      Joi.number().min(-180).max(180).required().messages({
-        "number.min": "Longitude must be between -180 and 180",
-        "number.max": "Longitude must be between -180 and 180",
+export const registerValidation = {
+  body: Joi.object({
+    firstName: Joi.string()
+      .min(2)
+      .max(30)
+      .pattern(nameRegex)
+      .required()
+      .messages({
+        "string.min": "First name must be at least 2 characters long",
+        "string.max": "First name cannot exceed 30 characters",
+        "string.pattern.base":
+          "First name must contain only English or Arabic letters",
+        "any.required": "First name is required",
       }),
-      Joi.number().min(-90).max(90).required().messages({
-        "number.min": "Latitude must be between -90 and 90",
-        "number.max": "Latitude must be between -90 and 90",
-      })
-    )
-    .length(2)
-    .required()
-    .messages({
-      "array.length": "Coordinates must contain exactly [longitude, latitude]",
-      "array.required": "Coordinates are required",
+
+    lastName: Joi.string()
+      .min(2)
+      .max(30)
+      .pattern(nameRegex)
+      .required()
+      .messages({
+        "string.min": "Last name must be at least 2 characters long",
+        "string.max": "Last name cannot exceed 30 characters",
+        "string.pattern.base":
+          "Last name must contain only English or Arabic letters",
+        "any.required": "Last name is required",
+      }),
+
+    email: Joi.string().pattern(emailRegex).lowercase().required().messages({
+      "string.pattern.base": "Please provide a valid email address",
+      "any.required": "Email is required",
     }),
-});
+
+    password: Joi.string().min(8).pattern(passwordRegex).required().messages({
+      "string.pattern.base":
+        "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character",
+      "any.required": "Password is required",
+    }),
+
+    gender: Joi.string().valid("Male", "Female").required().messages({
+      "any.only": "Gender must be either Male or Female",
+      "any.required": "Gender is required",
+    }),
+
+    phoneNumber: Joi.string().pattern(phoneRegex).required().messages({
+      "string.pattern.base": "Please provide a valid phone number",
+      "any.required": "Phone number is required",
+    }),
+
+    city: Joi.string().pattern(nameRegex).required().messages({
+      "string.pattern.base": "City must contain only English or Arabic letters",
+      "any.required": "City is required",
+    }),
+
+    street: Joi.string().pattern(streetRegex).required().messages({
+      "string.pattern.base":
+        "Street must contain only English or Arabic letters",
+      "any.required": "Street is required",
+    }),
+
+    homeNumber: Joi.string().pattern(/^\d+$/).required().messages({
+      "string.pattern.base": "Home number must contain only numbers",
+      "any.required": "Home number is required",
+    }),
+
+    coordinates: Joi.array()
+      .items(
+        Joi.number().min(-180).max(180).required().messages({
+          "number.min": "Longitude must be between -180 and 180",
+          "number.max": "Longitude must be between -180 and 180",
+        }),
+        Joi.number().min(-90).max(90).required().messages({
+          "number.min": "Latitude must be between -90 and 90",
+          "number.max": "Latitude must be between -90 and 90",
+        })
+      )
+      .length(2)
+      .required()
+      .messages({
+        "array.length":
+          "Coordinates must contain exactly [longitude, latitude]",
+        "array.required": "Coordinates are required",
+      }),
+  }),
+};
 
 export const otpValidation = Joi.object({
   userId: Joi.string().hex().required(),
   otpCode: Joi.string().length(5).required(),
 });
 
-export const loginValidation = Joi.object({
-  email: Joi.string().pattern(emailRegex).messages({
-    "string.pattern.base": "Please provide a valid email address",
-  }),
-  password: Joi.string().required(),
-});
-
 export const updatePasswordValidation = Joi.object({
   oldPassword: Joi.string().required(),
-  newPassword: Joi.string().required(),
-});
-
-export const forgotPasswordValidation = Joi.object({
-  email: Joi.string().pattern(emailRegex).required().messages({
-    "string.pattern.base": "Please provide a valid email address",
-    "any.required": "Email is required",
-  }),
-});
-
-export const resetPasswordValidation = Joi.object({
-  email: Joi.string().pattern(emailRegex).required().messages({
-    "string.pattern.base": "Please provide a valid email address",
-    "any.required": "Email is required",
-  }),
-  otpCode: Joi.string().length(5).required(),
-  password: Joi.string().required(),
+  newPassword: Joi.string().pattern(passwordRegex).required(),
 });
 
 export const forgotPasswordSchema = {
