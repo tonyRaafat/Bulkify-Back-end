@@ -20,7 +20,7 @@ export class ApiFeatures {
       excludeQuery.forEach((e) => delete filterQuery[e]);
       filterQuery = JSON.parse(
         JSON.stringify(filterQuery).replace(
-          /(gt|lt|gte|lte|eq)/,
+          /(gt|lt|gte|lte|eq)/g,
           (match) => `$${match}`
         )
       );

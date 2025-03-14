@@ -15,7 +15,13 @@ export const initApp = (app) => {
   dbConnection();
 
   // Middlewares
-  app.use(cors());
+  app.use(
+    cors({
+      origin: "*",
+      methods: "*",
+      allowedHeaders: "*",
+    })
+  );
   app.use(express.json());
 
   // Routes
