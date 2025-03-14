@@ -3,13 +3,12 @@ import { validate } from "../../middlewares/validate.js";
 import { auth, authorize } from "../../middlewares/auth.js";
 import { createAdminSchema, updateAdminSchema } from "./admin.validations.js";
 import * as adminController from "./admin.controllers.js";
+import { loginSchema } from "../customers/customers.validations.js";
 
 const router = express.Router();
 
-// Public route - Admin login
-router.post("/login", adminController.login);
+router.post("/login", validate(loginSchema), adminController.login);
 
-// Protected routes - Only accessible by admins
 router.post(
   "/create",
   auth(["admin"]),
