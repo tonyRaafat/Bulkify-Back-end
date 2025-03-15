@@ -397,11 +397,11 @@ export const updateProfile = async (req, res, next) => {
       updates.password = await bcrypt.hash(updates.password, salt);
     }
 
-    // If updating email or nationalId, check uniqueness
-    if (updates.email || updates.nationalId) {
+    // If updating email check uniqueness
+    if (updates.email) {
       const existingCustomer = await Customer.findOne({
         _id: { $ne: req.user._id },
-        $or: [{ email: updates.email }, { nationalId: updates.nationalId }],
+        $or: [{ email: updates.email }],
       });
 
       if (existingCustomer) {
