@@ -10,6 +10,8 @@ import categoryRouter from "./modules/category/categories.routers.js";
 import supplierRouter from "./modules/supplier/supplier.routers.js";
 import productRouter from "./modules/product/products.routers.js";
 import adminRouter from "./modules/admin/admin.routers.js";
+import purchaseRouter from "./modules/purchase/purchase.routers.js";
+
 export const initApp = (app) => {
   dotenv.config();
   dbConnection();
@@ -30,6 +32,7 @@ export const initApp = (app) => {
   app.use("/api/v1/categories", categoryRouter);
   app.use("/api/v1/suppliers", supplierRouter);
   app.use("/api/v1/products", productRouter);
+  app.use("/api/v1/purchases", purchaseRouter);
 
   app.get("/", (req, res) => {
     res.status(200).json({

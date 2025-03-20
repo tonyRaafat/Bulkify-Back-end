@@ -3,13 +3,16 @@ import { validate } from "../../middlewares/validate.js";
 import { auth, authorize } from "../../middlewares/auth.js";
 import { multerHost, validExtension } from "../../middlewares/multer.js";
 import * as productController from "./products.controllers.js";
+import purchaseRouter from "../purchase/purchase.routers.js";
 import {
   createProductSchema,
   updateProductSchema,
   approveProductSchema,
 } from "./products.validations.js";
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
+
+router.use("/:productId/purchases", purchaseRouter);
 
 // Public routes
 router.get("/", productController.getProducts);
