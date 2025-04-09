@@ -1,7 +1,7 @@
 import express from "express";
 import { validate } from "../../middlewares/validate.js";
 import { auth, authorize } from "../../middlewares/auth.js";
-import { createAdminSchema, updateAdminSchema } from "./admin.validations.js";
+import { createAdminSchema, getAllProductsSchema, updateAdminSchema } from "./admin.validations.js";
 import * as adminController from "./admin.controllers.js";
 import { loginSchema } from "../customers/customers.validations.js";
 
@@ -17,7 +17,7 @@ router.post(
   adminController.createAdmin
 );
 router.post(
-  
+
   "/getPendingProducts",
   auth(["admin"]),
   authorize({ admin: ["all"] }),
