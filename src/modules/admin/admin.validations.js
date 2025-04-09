@@ -37,6 +37,9 @@ export const createAdminSchema = {
   headers: generalField.headers,
 };
 
+export const getAllProductsSchema = {
+  headers: generalField.headers,
+};
 export const updateAdminSchema = {
   body: Joi.object({
     fullName: Joi.string().pattern(nameRegex).min(3).max(50).messages({

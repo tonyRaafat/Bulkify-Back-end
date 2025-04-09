@@ -2,6 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Admin } from "../../../database/models/admin.model.js";
 import { throwError } from "../../utils/throwerror.js";
+import { Product } from "../../../database/models/product.model.js";
+import { ApiFeatures } from "../../utils/apiFeatuers.js";
 
 /**
  * Admin login controller
@@ -142,3 +144,35 @@ export const deleteAdmin = async (req, res, next) => {
     next(error);
   }
 };
+export const getProducts = async (req, res, next) => {
+  try {
+    const baseConditions = { isApproved: false };
+    let query = Product.find(baseConditions);
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .search(["name"])
+      .select();
+
+    const products = await apiFeatures.query.populate([
+      { path: "supplierId", select: "fullName supplierRate" },
+      { path: "categoryId", select: "name" },
+    ]);
+
+    const total = await Product.countDocuments(baseConditions);
+
+    res.status(200).json({
+      message: "Products retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      products,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

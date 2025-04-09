@@ -16,6 +16,13 @@ router.post(
   validate(createAdminSchema),
   adminController.createAdmin
 );
+router.post(
+  "/getPendingProducts",
+  auth(["admin"]),
+  authorize({ admin: ["all"] }),
+  validate(getAllProductsSchema),
+  adminController.getProducts
+);
 
 router.put(
   "/update",
