@@ -17,6 +17,7 @@ router.post(
   adminController.createAdmin
 );
 router.post(
+  
   "/getPendingProducts",
   auth(["admin"]),
   authorize({ admin: ["all"] }),
