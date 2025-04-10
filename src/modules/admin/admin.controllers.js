@@ -175,4 +175,34 @@ export const getProducts = async (req, res, next) => {
     next(error);
   }
 };
+export const getAll = async (req, res, next) => {
+  try {
+    let query = Product.find();
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .search(["name"])
+      .select();
+
+    const products = await apiFeatures.query.populate([
+      { path: "supplierId", select: "fullName supplierRate" },
+      { path: "categoryId", select: "name" },
+    ]);
+
+    const total = await Product.countDocuments(baseConditions);
+
+    res.status(200).json({
+      message: "Products retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      products,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
