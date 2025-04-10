@@ -192,7 +192,7 @@ export const getAll = async (req, res, next) => {
       { path: "categoryId", select: "name" },
     ]);
 
-    const total = await Product.countDocuments(baseConditions);
+    const total = await Product.countDocuments();
 
     res.status(200).json({
       message: "Products retrieved successfully",
