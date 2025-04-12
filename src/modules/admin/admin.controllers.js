@@ -149,15 +149,7 @@ export const getProducts = async (req, res, next) => {
     const baseConditions = { isApproved: false };
     let query = Product.find(baseConditions);
 
-    // Apply API features
-    const apiFeatures = new ApiFeatures(query, req.query)
-      .pagination()
-      .filter()
-      .sort()
-      .search(["name"])
-      .select();
-
-    const products = await apiFeatures.query.populate([
+    const products = await query.populate([
       { path: "supplierId", select: "fullName supplierRate" },
       { path: "categoryId", select: "name" },
     ]);
@@ -166,9 +158,6 @@ export const getProducts = async (req, res, next) => {
 
     res.status(200).json({
       message: "Products retrieved successfully",
-      currentPage: apiFeatures.page,
-      totalPages: Math.ceil(total / apiFeatures.limit),
-      total,
       products,
     });
   } catch (error) {
