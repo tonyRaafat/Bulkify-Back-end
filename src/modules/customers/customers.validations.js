@@ -6,6 +6,7 @@ import {
   passwordRegex,
   phoneRegex,
   streetRegex,
+  dateRegex
 } from "../../constants/constants.js";
 
 export const updateCustomerSchema = {
@@ -33,9 +34,9 @@ export const updateCustomerSchema = {
         "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character",
     }),
 
-    age: Joi.number().min(18).max(100).messages({
-      "number.min": "You must be at least 18 years old",
-      "number.max": "Age cannot exceed 100 years",
+    birthDate: Joi.string().pattern(dateRegex).messages({
+      "string.pattern.base": "Birth date must be in MM-DD-YYYY format",
+      "string.empty": "Birth date cannot be empty"
     }),
 
     gender: Joi.string().valid("Male", "Female").messages({
@@ -120,6 +121,12 @@ export const registerValidation = {
       "string.pattern.base":
         "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character",
       "any.required": "Password is required",
+    }),
+
+    birthDate: Joi.string().pattern(dateRegex).required().messages({
+      "string.pattern.base": "Birth date must be in MM-DD-YYYY format",
+      "string.empty": "Birth date cannot be empty",
+      "any.required": "Birth date is required"
     }),
 
     gender: Joi.string().valid("Male", "Female").required().messages({

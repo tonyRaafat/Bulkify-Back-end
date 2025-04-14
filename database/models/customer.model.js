@@ -19,6 +19,10 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    birthDate: {
+      type: Date,
+      required: true,
+    },
     gender: {
       type: String,
     },

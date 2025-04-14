@@ -15,3 +15,6 @@ export const emailRegex =
 // New regex patterns for address components
 export const cityRegex = /^[a-zA-Z\u0600-\u06FF\s]{2,50}$/; // Allow English and Arabic city names
 export const streetRegex = /^[a-zA-Z0-9\u0600-\u06FF\s\.\,\-]{3,100}$/; // Allow English, Arabic, numbers and some special characters
+
+// Date format regex for MM-DD-YYYY
+export const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
