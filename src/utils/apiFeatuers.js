@@ -5,13 +5,15 @@ export class ApiFeatures {
     }
   
     pagination() {
-      let page = this.queryString.page * 1 || 1;
-      if (page < 1) page = 1;
-      let limit = this.queryString.limit || 5;
-      let skip = (page - 1) * limit;
-      this.query.find().skip(skip).limit(limit);
-      this.page = page
-      return this;
+      pagination() {
+  let page = this.queryString.page * 1 || 1;
+  if (page < 1) page = 1;
+  let limit = this.queryString.limit * 1 || 5; // Ensure limit is a number
+  let skip = (page - 1) * limit;
+  this.query = this.query.skip(skip).limit(limit); // Update the query chain correctly
+  this.page = page;
+  return this;
+}
     }
   
     filter() {
