@@ -4,7 +4,7 @@ export class ApiFeatures {
       this.queryString = queryString;
     }
   
-    pagination() {
+    
       pagination() {
   let page = this.queryString.page * 1 || 1;
   if (page < 1) page = 1;
@@ -14,7 +14,7 @@ export class ApiFeatures {
   this.page = page;
   return this;
 }
-    }
+    
   
     filter() {
       let excludeQuery = ["page", "sort", "search", "select"];
