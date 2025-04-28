@@ -1,19 +1,16 @@
 import joi from "joi";
 import { generalField } from "../../utils/generalFields.js";
-import {
-  nameRegex,
-} from "../../constants/constants.js";
 
 export const createCategorySchema = {
   body: joi.object({
-    name: joi.string().min(3).max(25).pattern(nameRegex).required(),
+    name: joi.string().min(3).max(25).required(),
   }),
   headers: generalField.headers,
 };
 
 export const updateCategorySchema = {
   body: joi.object({
-    name: joi.string().min(3).max(25).pattern(nameRegex).required(),
+    name: joi.string().min(3).max(25).required(),
   }),
   params: joi.object({
     id: generalField.id,

@@ -12,7 +12,7 @@ const purchaseSchema = new mongoose.Schema({
     quantity: {
         type: Number,
         required: true,
-    },
+    }, // that the supplier put
     status: {
         type: String,
         required: true,
@@ -21,7 +21,12 @@ const purchaseSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product', // Reference to Product model
         required: true
-    }
+    },
+    userLocation: {
+        type: [Number], // [longitude, latitude]
+        required: true
+    },
+
 }, {
     timestamps: true
 });
