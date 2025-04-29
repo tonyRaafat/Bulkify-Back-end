@@ -23,7 +23,7 @@ const customerPurchaseSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Pending", "Completed", "Cancelled"],
+      enum: ["Pending", "Completed", "Cancelled", "Waiting payment"],
       required: true,
     },
     paymentMethod: {
