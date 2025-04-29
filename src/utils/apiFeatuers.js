@@ -7,7 +7,10 @@ export class ApiFeatures {
   pagination() {
     let page = this.queryString.page * 1 || 1;
     if (page < 1) page = 1;
-    let limit = this.queryString.limit * 1 || 5;
+    let limit = this.queryString.limit * 1;
+    if (!limit) {
+      limit = 5
+    }
     let skip = (page - 1) * limit;
     this.query = this.query.skip(skip).limit(limit);
     this.page = page;
@@ -41,7 +44,7 @@ export class ApiFeatures {
           [field]: { $regex: this.queryString.search, $options: "i" }
         })),
       };
-      this.query = this.query.find(searchQuery); 
+      this.query = this.query.find(searchQuery);
     }
     return this;
   }
