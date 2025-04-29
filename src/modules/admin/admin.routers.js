@@ -31,6 +31,22 @@ router.get(
   adminController.getAll
 );
 
+router.get(
+  "/getAllCustomers",
+  auth(["admin"]),
+  authorize({ admin: ["all"] }),
+  validate(getAllProductsSchema),
+  adminController.getAllCustomers
+);
+
+router.get(
+  "/getAllSuppliers",
+  auth(["admin"]),
+  authorize({ admin: ["all"] }),
+  validate(getAllProductsSchema),
+  adminController.getAllSuppliers
+);
+
 
 router.put(
   "/update",

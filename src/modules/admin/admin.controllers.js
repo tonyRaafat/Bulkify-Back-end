@@ -4,6 +4,8 @@ import { Admin } from "../../../database/models/admin.model.js";
 import { throwError } from "../../utils/throwerror.js";
 import { Product } from "../../../database/models/product.model.js";
 import { ApiFeatures } from "../../utils/apiFeatuers.js";
+import { Customer } from "../../../database/models/customer.model.js";
+import { Supplier } from "../../../database/models/supplier.model.js";
 
 /**
  * Admin login controller
@@ -189,6 +191,67 @@ export const getAll = async (req, res, next) => {
       totalPages: Math.ceil(total / apiFeatures.limit),
       total,
       products,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const getAllCustomers = async (req, res, next) => {
+  try {
+    let query = Customer.find();
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .search(["name"])
+      .select();
+
+    const customers = await apiFeatures.query.populate([
+      { path: "customerPurchases" },
+      { path: "productRates" },
+    ]);
+
+    const total = await Customer.countDocuments();
+
+    res.status(200).json({
+      message: "Customers retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      customers,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getAllSuppliers = async (req, res, next) => {
+  try {
+    let query = Supplier.find();
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .search(["name"])
+      .select();
+
+    const suppliers = await apiFeatures.query.populate([
+      { path: "products" },
+    ]);
+
+    const total = await Supplier.countDocuments();
+
+    res.status(200).json({
+      message: "Suppliers retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      suppliers,
     });
   } catch (error) {
     next(error);
