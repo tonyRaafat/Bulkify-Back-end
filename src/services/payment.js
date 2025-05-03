@@ -12,7 +12,9 @@ export async function payment({
     line_items = [],
     discounts = []
 } = {}) {
-    const stripe = new Stripe(process.env.stripe_secre);
+    const stripe = new Stripe(process.env.stripe_secre, {
+        apiVersion: '2022-11-15',
+    });
     const session = await stripe.checkout.sessions.create({
         payment_method_types,
         mode,
