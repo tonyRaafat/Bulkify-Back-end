@@ -63,4 +63,17 @@ router.delete(
   adminController.deleteAdmin
 );
 
+router.delete(
+  "/customers/:id",
+  auth(["admin"]),
+  authorize({ admin: ["all"] }),
+  adminController.deleteCustomer
+);
+router.delete(
+  "/suppliers/:id",
+  auth(["admin"]),
+  authorize({ admin: ["all"] }),
+  adminController.deleteSupplier
+);
+
 export default router;

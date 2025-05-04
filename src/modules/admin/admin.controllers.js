@@ -146,6 +146,38 @@ export const deleteAdmin = async (req, res, next) => {
     next(error);
   }
 };
+export const deleteCustomer = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const customer = await Customer.findByIdAndDelete(id);
+    if (!customer) {
+      throw throwError("Customer not found", 404);
+    }
+
+    res.status(200).json({
+      message: "Customer deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const deleteSupplier = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const supplier = await Supplier.findByIdAndDelete(id);
+    if (!supplier) {
+      throw throwError("Supplier not found", 404);
+    }
+
+    res.status(200).json({
+      message: "Supplier deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 export const getProducts = async (req, res, next) => {
   try {
     const baseConditions = { isApproved: false };
