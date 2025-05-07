@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { Supplier } from "../../../database/models/supplier.model.js";
 import { throwError } from "../../utils/throwerror.js";
 import { sendEmail, sendVerificationEmail } from "../../utils/emailService.js";
+import { deleteSupplierProducts } from "../product/products.controllers.js";
 
 const BASE_URL = "https://bulkify-back-end.vercel.app";
 
@@ -335,6 +336,30 @@ export const updateProfile = async (req, res, next) => {
     res.status(200).json({
       message: "Profile updated successfully",
       supplier,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete supplier account
+ * Allows suppliers to delete their own account and all associated products
+ */
+export const deleteAccount = async (req, res, next) => {
+  try {
+    // First delete all products by this supplier
+    await deleteSupplierProducts(req.user._id);
+    
+    // Then delete the supplier
+    const supplier = await Supplier.findByIdAndDelete(req.user._id);
+
+    if (!supplier) {
+      throw throwError("Supplier not found", 404);
+    }
+
+    res.status(200).json({
+      message: "Account and all associated products deleted successfully",
     });
   } catch (error) {
     next(error);

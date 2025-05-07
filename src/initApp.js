@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { errorHandler } from "./utils/errorhandler.js";
 import { dbConnection } from "../database/dbConnection.js";
+import { setupSwagger } from "./utils/swagger.js";
 
 // Import routers
 import customerRouter from "./modules/customers/customers.routers.js";
@@ -25,6 +26,9 @@ export const initApp = (app) => {
     })
   );
   app.use(express.json());
+  
+  // Setup Swagger documentation
+  setupSwagger(app);
 
   // Routes
   app.use("/api/v1/admins", adminRouter);

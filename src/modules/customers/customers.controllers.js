@@ -10,9 +10,6 @@ import { ProductRate } from "../../../database/models/productRate.model.js";
 
 const BASE_URL = "https://bulkify-back-end.vercel.app";
 
-/**
- * Customer registration controller
- */
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -55,9 +52,6 @@ export const forgotPassword = async (req, res, next) => {
   }
 };
 
-/**
- * Reset password controller
- */
 export const resetPassword = async (req, res, next) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -102,7 +96,6 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-// Update the register and update functions to validate coordinates
 export const register = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -271,9 +264,6 @@ export const verifyOTP = async (req, res, next) => {
   }
 };
 
-/**
- * Customer login controller
- */
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -355,9 +345,6 @@ export const login = async (req, res, next) => {
   }
 };
 
-/**
- * Get customer profile
- */
 export const getProfile = async (req, res, next) => {
   try {
     const customer = await Customer.findById(req.user._id)
@@ -384,9 +371,6 @@ export const getProfile = async (req, res, next) => {
   }
 };
 
-/**
- * Update customer profile
- */
 export const updateProfile = async (req, res, next) => {
   try {
     const updates = req.body;
@@ -431,10 +415,6 @@ export const updateProfile = async (req, res, next) => {
   }
 };
 
-/**
- * Delete customer account
- * Allows customers to delete their own account
- */
 export const deleteAccount = async (req, res, next) => {
   try {
     const customer = await Customer.findByIdAndDelete(req.user._id);

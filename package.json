@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js",
+    "docs": "jsdoc -c jsdoc.json"
   },
   "engines": {
     "node": "20.12.2"
@@ -30,6 +31,8 @@
     "nodemailer": "^6.10.0",
     "pdfkit": "^0.16.0",
     "slugify": "^1.6.6",
-    "stripe": "^17.6.0"
+    "stripe": "^17.6.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   }
 }

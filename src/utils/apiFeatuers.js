@@ -5,17 +5,22 @@ export class ApiFeatures {
   }
 
   pagination() {
-    let page = this.queryString.page * 1 || 1;
+    let page = parseInt(this.queryString.page) || 1;
     if (page < 1) page = 1;
-    let limit = 5;
-    let skip = (page - 1) * limit;
-    this.query.find().skip(skip).limit(limit);
-    this.page = page
+    
+    let limit = parseInt(this.queryString.limit) || 5;
+    if (limit < 1) limit = 10;
+    
+    const skip = (page - 1) * limit;
+    
+    this.query = this.query.skip(skip).limit(limit);
+    this.page = page;
+    this.limit = limit;
     return this;
   }
 
   filter() {
-    let excludeFields = ["page", "sort", "search", "select"];
+    let excludeFields = ["page", "sort", "search", "select", "limit"];
     let filterObj = { ...this.queryString };
     excludeFields.forEach((field) => delete filterObj[field]);
 

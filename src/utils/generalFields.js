@@ -25,6 +25,5 @@ export const generalField = {
         accept: joi.string(),
         'accept-encoding': joi.string(),
         connection: joi.string(),
-        token: joi.string().required()
     })
 }

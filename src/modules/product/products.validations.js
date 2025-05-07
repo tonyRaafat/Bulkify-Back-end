@@ -57,3 +57,26 @@ export const approveProductSchema = {
   }),
   headers: generalField.headers,
 };
+
+export const rateProductSchema = {
+  params: Joi.object({
+    id: Joi.string().hex().length(24).required(),
+  }),
+  body: Joi.object({
+    rate: Joi.number().min(1).max(5).required().messages({
+      "number.min": "Rating must be at least 1",
+      "number.max": "Rating cannot exceed 5",
+      "any.required": "Rating is required"
+    }),
+    comment: Joi.string().max(500),
+  }),
+  headers: generalField.headers,
+};
+
+export const deleteRatingSchema = {
+  params: Joi.object({
+    id: Joi.string().hex().length(24).required(),
+    ratingId: Joi.string().hex().length(24).required(),
+  }),
+  headers: generalField.headers,
+};
