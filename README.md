@@ -3,6 +3,8 @@
 A robust e-commerce platform API that facilitates bulk purchasing interactions between suppliers and customers.
 
 ## Project Overview
+<a href="https://deepwiki.com/tonyRaafat/Bulkify-Back-end">https://deepwiki.com/tonyRaafat/Bulkify-Back-end</a>
+
 
 Bulkify is a specialized e-commerce platform that connects suppliers with customers interested in bulk purchases. The platform features a comprehensive approval system, user role management, and secure payment processing.
 
