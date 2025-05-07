@@ -1,6 +1,12 @@
 // swagger.js
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const options = {
   definition: {
@@ -40,8 +46,8 @@ const options = {
     ],
   },
   apis: [
-    './src/utils/swagger-schemas.js',
-    './src/modules/**/*.js'
+    path.join(__dirname, 'swagger-schemas.js'),
+    path.join(__dirname, '../modules/**/*.js')
   ], // Path to the API docs
 };
 
