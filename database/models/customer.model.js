@@ -74,4 +74,5 @@ const customerSchema = new mongoose.Schema(
   }
 );
 
+// Change the model name to match your collection name
 export const Customer = mongoose.model("Customer", customerSchema); // This will create a 'customers' collection

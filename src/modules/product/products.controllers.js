@@ -2,6 +2,28 @@ import { Product } from "../../../database/models/product.model.js";
 import { throwError } from "../../utils/throwerror.js";
 import cloudinary from "../../utils/cloudinary.js";
 import { ApiFeatures } from "../../utils/apiFeatuers.js";
+import Purchase from "../../../database/models/purchase.model.js";
+
+
+const haversineDistance = (coords1, coords2) => {
+
+
+  const toRad = (value) => (value * Math.PI) / 180;
+  const R = 6371; // Earth's radius in km
+
+  const dLat = toRad(coords2[1] - coords1[1]); // Latitude difference
+  const dLon = toRad(coords2[0] - coords1[0]); // Longitude difference
+  const lat1 = toRad(coords1[1]); // Latitude 1
+  const lat2 = toRad(coords2[1]); // Latitude 2
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Distance in km
+};
+
 
 /**
  * @swagger
@@ -89,7 +111,7 @@ export const createProduct = async (req, res, next) => {
 
     if (req.files.length > 5) {
       throw throwError("At most 5 photos", 400);
-    } 
+    }
 
     let imageSource = [];
     if (req.files && req.files.length > 0) {
@@ -295,6 +317,15 @@ export const updateProduct = async (req, res, next) => {
 export const getProducts = async (req, res, next) => {
   try {
     let query = Product.find();
+
+    const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
+
+    const allPurchases = await Purchase.find(); // Or apply any filtering you want
+
+    const nearby = allPurchases.filter(p => {
+      const distance = haversineDistance(userCoords, p.userLocation);
+      return distance <= 2;
+    });
 
     // Base query conditions
     const baseConditions = {};
@@ -546,7 +577,7 @@ export const deleteSupplierProducts = async (supplierId) => {
   try {
     // Find all products by this supplier
     const products = await Product.find({ supplierId });
-    
+
     // Delete each product's images from cloudinary
     for (const product of products) {
       if (product.imageSource && product.imageSource.length > 0) {
@@ -563,7 +594,7 @@ export const deleteSupplierProducts = async (supplierId) => {
         }
       }
     }
-    
+
     // Delete all products by this supplier
     const result = await Product.deleteMany({ supplierId });
     return result;
@@ -630,7 +661,7 @@ export const rateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { rate, comment } = req.body;
-    
+
     // Check if product exists and is approved
     const product = await Product.findOne({ _id: id, isApproved: true });
     if (!product) {
@@ -639,10 +670,10 @@ export const rateProduct = async (req, res, next) => {
 
     // Check if customer has purchased this product
     const { CustomerPurchase } = await import("../../../database/models/customerPurchase.model.js");
-    const hasPurchased = await CustomerPurchase.findOne({ 
+    const hasPurchased = await CustomerPurchase.findOne({
       customerId: req.user._id,
       productId: id,
-      status: "Completed" 
+      status: "Completed"
     });
 
     // For development purposes, temporarily allow rating without purchase
@@ -753,7 +784,7 @@ export const rateProduct = async (req, res, next) => {
 export const getProductRatings = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+
     // Check if product exists
     const product = await Product.findById(id);
     if (!product) {
@@ -762,16 +793,16 @@ export const getProductRatings = async (req, res, next) => {
 
     // Get all ratings for this product
     const { ProductRate } = await import("../../../database/models/productRate.model.js");
-    
+
     // Apply pagination and other API features
     let query = ProductRate.find({ productId: id });
     const apiFeatures = new ApiFeatures(query, req.query)
       .pagination()
       .sort()
       .select();
-    
+
     const ratings = await apiFeatures.query.populate("customerId", "firstName lastName");
-    
+
     // Get total count of ratings for pagination info
     const total = await ProductRate.countDocuments({ productId: id });
 
@@ -832,7 +863,7 @@ export const getProductRatings = async (req, res, next) => {
 export const deleteProductRating = async (req, res, next) => {
   try {
     const { id, ratingId } = req.params;
-    
+
     // Check if product exists
     const product = await Product.findById(id);
     if (!product) {
@@ -883,9 +914,9 @@ export const deleteProductRating = async (req, res, next) => {
 const calculateProductAverageRating = async (productId) => {
   const { ProductRate } = await import("../../../database/models/productRate.model.js");
   const ratings = await ProductRate.find({ productId });
-  
+
   if (ratings.length === 0) return 0;
-  
+
   const sum = ratings.reduce((total, rating) => total + rating.rate, 0);
   return +(sum / ratings.length).toFixed(1); // Round to 1 decimal place
 };
