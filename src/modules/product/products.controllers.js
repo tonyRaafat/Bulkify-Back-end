@@ -318,6 +318,65 @@ export const getProducts = async (req, res, next) => {
   try {
     let query = Product.find();
 
+    // Base query conditions
+    const baseConditions = {};
+
+    // If customer, only show approved products
+    if (!req.user || req.userType === "customer") {
+      baseConditions.isApproved = true;
+    }
+
+    // If supplier, only show their products
+    if (req.userType === "supplier") {
+      baseConditions.supplierId = req.user._id;
+    }
+
+    // Advanced search options
+    if (req.query.minPrice) {
+      baseConditions.price = { $gte: parseFloat(req.query.minPrice) };
+    }
+    if (req.query.maxPrice) {
+      baseConditions.price = {
+        ...baseConditions.price,
+        $lte: parseFloat(req.query.maxPrice),
+      };
+    }
+    if (req.query.category) {
+      baseConditions.categoryId = req.query.category;
+    }
+
+    query = Product.find(baseConditions);
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .search(["name"])
+      .select();
+
+    const products = await apiFeatures.query.populate([
+      { path: "supplierId", select: "fullName supplierRate" },
+      { path: "categoryId", select: "name" },
+    ]);
+
+    const total = await Product.countDocuments(baseConditions);
+
+    res.status(200).json({
+      message: "Products retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      products,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const getProductsForUser = async (req, res, next) => {
+  try {
+    let query = Product.find();
+
     const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
 
     const allPurchases = await Purchase.find(); // Or apply any filtering you want

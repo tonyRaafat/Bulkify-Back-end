@@ -88,6 +88,13 @@ router.use("/:productId/purchases", purchaseRouter);
  */
 router.get("/", productController.getProducts);
 
+
+router.get("/u",
+  auth(["customer"]),
+  authorize({ customer: ["verified"] }),
+  validate(getProductsForUserSchema),
+  productController.getProductsForUser);
+
 /**
  * @swagger
  * /products/{id}:
