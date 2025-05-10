@@ -379,7 +379,7 @@ export const getProductsForUser = async (req, res, next) => {
 
     const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
 
-    const allPurchases = await Purchase.find(); // Or apply any filtering you want
+    const allPurchases = await Purchase.find().populate("productId");
 
     const nearby = allPurchases.filter(p => {
       const distance = haversineDistance(userCoords, p.userLocation);
@@ -437,7 +437,7 @@ export const getProductsForUser = async (req, res, next) => {
       total,
       products,
       nearby
-      
+
     });
   } catch (error) {
     next(error);
