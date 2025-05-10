@@ -436,6 +436,8 @@ export const getProductsForUser = async (req, res, next) => {
       totalPages: Math.ceil(total / apiFeatures.limit),
       total,
       products,
+      nearby
+      
     });
   } catch (error) {
     next(error);
