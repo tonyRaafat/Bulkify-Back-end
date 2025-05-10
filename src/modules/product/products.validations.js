@@ -45,6 +45,7 @@ export const updateProductSchema = {
 
   headers: generalField.headers,
 };
+
 export const getProductsForUserSchema = {
   headers: generalField.headers,
 };

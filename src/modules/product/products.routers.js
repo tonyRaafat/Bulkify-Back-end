@@ -10,6 +10,7 @@ import {
   approveProductSchema,
   rateProductSchema,
   deleteRatingSchema,
+  getProductsForUserSchema,
 } from "./products.validations.js";
 
 const router = express.Router({ mergeParams: true });
