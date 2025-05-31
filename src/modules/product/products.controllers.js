@@ -487,6 +487,41 @@ export const getProductsForUser = async (req, res, next) => {
  *                   type: string
  *                 product:
  *                   $ref: '#/components/schemas/Product'
+ *                 nearbyPurchases:
+ *                   type: array
+ *                   description: For customers, shows nearby started purchases within 2km that they can vote on
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       purchaseId:
+ *                         type: string
+ *                         description: ID of the purchase
+ *                       startDate:
+ *                         type: string
+ *                         format: date-time
+ *                         description: When the purchase was started
+ *                       endDate:
+ *                         type: string
+ *                         format: date-time
+ *                         description: When the purchase will expire
+ *                       totalQuantity:
+ *                         type: number
+ *                         description: Total quantity goal for the purchase
+ *                       committedQuantity:
+ *                         type: number
+ *                         description: Current quantity already committed by customers
+ *                       progress:
+ *                         type: number
+ *                         description: Progress percentage toward target quantity (0-100)
+ *                       remainingQuantity:
+ *                         type: number
+ *                         description: How many more items needed to reach the goal
+ *                       distance:
+ *                         type: number
+ *                         description: Distance in kilometers from the user
+ *                       hasVoted:
+ *                         type: boolean
+ *                         description: Whether the current user has already voted on this purchase
  *       404:
  *         description: Product not found
  */
@@ -513,11 +548,57 @@ export const getProduct = async (req, res, next) => {
       product.supplierId._id.toString() !== req.user._id.toString()
     ) {
       throw throwError("Unauthorized access", 403);
+    }    let nearbyPurchases = null;
+
+    // Check for nearby purchases if the user is a customer
+    if (req.user && req.userType === "customer" && req.user.coordinates) {
+      const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
+      
+      // Find active purchases for this product
+      const activePurchases = await Purchase.find({
+        productId: id,
+        status: "Started" // Only get purchases that have been started but not completed
+      });      // Filter purchases within 2km of the user
+      const nearbyPurchasesList = activePurchases.filter(purchase => {
+        const distance = haversineDistance(userCoords, purchase.userLocation);
+        return distance <= 2; // 2km radius
+      });
+
+      // Get customer purchase data for each nearby purchase
+      const { CustomerPurchase } = await import("../../../database/models/customerPurchase.model.js");
+      
+      nearbyPurchases = await Promise.all(nearbyPurchasesList.map(async purchase => {
+        // Calculate current committed quantity
+        const customerPurchases = await CustomerPurchase.find({ 
+          purchaseId: purchase._id,
+          status: { $in: ["Pending", "Completed"] }
+        });
+        
+        const committedQuantity = customerPurchases.reduce((total, cp) => total + cp.purchaseQuantity, 0);
+          // Check if current user has already voted on this purchase
+        const hasUserVoted = req.user ? await CustomerPurchase.exists({
+          purchaseId: purchase._id,
+          customerId: req.user._id
+        }) : false;
+
+        return {
+          purchaseId: purchase._id,
+          startDate: purchase.startDate,
+          endDate: purchase.endDate,
+          totalQuantity: purchase.quantity, // Target quantity
+          committedQuantity, // Current committed quantity
+          progress: Math.round((committedQuantity / purchase.quantity) * 100), // Progress percentage
+          remainingQuantity: Math.max(0, purchase.quantity - committedQuantity),
+          distance: parseFloat(haversineDistance(userCoords, purchase.userLocation).toFixed(2)),
+          hasVoted: !!hasUserVoted
+        };
+      }));
     }
 
     res.status(200).json({
       message: "Product retrieved successfully",
       product,
+      nearbyPurchases: nearbyPurchases || []
     });
   } catch (error) {
     next(error);
