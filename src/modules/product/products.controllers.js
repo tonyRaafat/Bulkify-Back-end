@@ -3,6 +3,7 @@ import { throwError } from "../../utils/throwerror.js";
 import cloudinary from "../../utils/cloudinary.js";
 import { ApiFeatures } from "../../utils/apiFeatuers.js";
 import Purchase from "../../../database/models/purchase.model.js";
+import { Category } from "../../../database/models/category.model.js";
 
 
 const haversineDistance = (coords1, coords2) => {
@@ -121,9 +122,7 @@ export const createProduct = async (req, res, next) => {
         });
         imageSource.push(secure_url);
       }
-    }
-
-    // Create product with description
+    }    // Create product with description
     const product = await Product.create({
       name: name.toLowerCase(),
       description, // Add description here
@@ -135,6 +134,12 @@ export const createProduct = async (req, res, next) => {
       categoryId,
       isApproved: false, // New products need admin approval
     });
+
+    // Update the category by adding this product to its products array
+    await Category.findByIdAndUpdate(
+      categoryId,
+      { $push: { products: product._id } }
+    );
 
     res.status(201).json({
       message: "Product created successfully, waiting for admin approval",
@@ -231,11 +236,26 @@ export const updateProduct = async (req, res, next) => {
         folder: `Bulkify/products/${product.supplierId}`,
       });
       updates.imageSource = secure_url;
-    }
-
-    // Set approval status based on user type
+    }    // Set approval status based on user type
     if (req.userType === "supplier") {
       updates.isApproved = false; // Require re-approval for supplier updates
+    }
+
+    // Check if category is being updated
+    if (updates.categoryId && updates.categoryId !== product.categoryId.toString()) {
+      const { Category } = await import("../../../database/models/category.model.js");
+      
+      // Remove product from old category
+      await Category.findByIdAndUpdate(
+        product.categoryId,
+        { $pull: { products: product._id } }
+      );
+      
+      // Add product to new category
+      await Category.findByIdAndUpdate(
+        updates.categoryId,
+        { $push: { products: product._id } }
+      );
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -316,9 +336,7 @@ export const updateProduct = async (req, res, next) => {
  */
 export const getProducts = async (req, res, next) => {
   try {
-    let query = Product.find();
-
-    // Base query conditions
+    let query = Product.find();    // Base query conditions
     const baseConditions = {};
 
     // If customer, only show approved products
@@ -328,7 +346,7 @@ export const getProducts = async (req, res, next) => {
 
     // If supplier, only show their products
     if (req.userType === "supplier") {
-      baseConditions.supplierId._id = req.user._id;
+      baseConditions.supplierId = req.user._id;
     }
 
     // Advanced search options
@@ -552,9 +570,26 @@ export const deleteProduct = async (req, res, next) => {
     }
 
     // Delete product image from cloudinary
-    if (product.imageSource) {
-      const publicId = product.imageSource.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(publicId);
+    if (product.imageSource && Array.isArray(product.imageSource)) {
+      for (const imageUrl of product.imageSource) {
+        try {
+          const urlParts = imageUrl.split('/');
+          const publicIdWithExtension = urlParts[urlParts.length - 1];
+          const publicId = `Bulkify/products/${product.supplierId}/${publicIdWithExtension.split('.')[0]}`;
+          await cloudinary.uploader.destroy(publicId);
+        } catch (error) {
+          console.error(`Failed to delete image from cloudinary: ${error.message}`);
+        }
+      }
+    }
+
+    // Remove product from category's products array
+    if (product.categoryId) {
+      const { Category } = await import("../../../database/models/category.model.js");
+      await Category.findByIdAndUpdate(
+        product.categoryId,
+        { $pull: { products: product._id } }
+      );
     }
 
     res.status(200).json({
@@ -638,9 +673,19 @@ export const deleteSupplierProducts = async (supplierId) => {
   try {
     // Find all products by this supplier
     const products = await Product.find({ supplierId });
+    const { Category } = await import("../../../database/models/category.model.js");
 
-    // Delete each product's images from cloudinary
+    // Delete each product's images from cloudinary and remove from categories
     for (const product of products) {
+      // Remove product from category's products array
+      if (product.categoryId) {
+        await Category.findByIdAndUpdate(
+          product.categoryId,
+          { $pull: { products: product._id } }
+        );
+      }
+
+      // Delete images from cloudinary
       if (product.imageSource && product.imageSource.length > 0) {
         for (const imageUrl of product.imageSource) {
           try {

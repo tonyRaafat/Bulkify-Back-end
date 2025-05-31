@@ -89,7 +89,11 @@ export const deleteCategory = async (req, res, next) => {
 
 export const getAllCategories = async (req, res, next) => {
   try {
-    const categories = await Category.find().populate("products");
+    const categories = await Category.find().populate({
+      path: "products",
+      // Options to only include approved products for non-admin users
+      match: req.userType !== "admin" ? { isApproved: true } : {}
+    });
     res.status(200).json({
       message: "Categories retrieved successfully",
       categories,
@@ -103,7 +107,13 @@ export const getCategoryById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const category = await Category.findById(id).populate("products");
+    const category = await Category.findById(id).populate({
+      path: "products",
+      select: "name description price imageSource bulkThreshold isApproved",
+      // Options to only include approved products for non-admin users
+      match: req.userType !== "admin" ? { isApproved: true } : {}
+    });
+
     if (!category) {
       throw throwError("Category not found", 404);
     }
@@ -111,6 +121,21 @@ export const getCategoryById = async (req, res, next) => {
     res.status(200).json({
       message: "Category retrieved successfully",
       category,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Helper endpoint to sync products with categories (Admin only)
+export const syncProductsWithCategories = async (req, res, next) => {
+  try {
+    const { syncProductsWithCategories } = await import("../../utils/migrateCategoryProducts.js");
+    const result = await syncProductsWithCategories();
+    
+    res.status(200).json({
+      message: "Products synced with categories successfully",
+      result
     });
   } catch (error) {
     next(error);

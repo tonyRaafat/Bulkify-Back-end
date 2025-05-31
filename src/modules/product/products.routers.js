@@ -87,7 +87,7 @@ router.use("/:productId/purchases", purchaseRouter);
  *                     totalItems:
  *                       type: integer
  */
-router.get("/", productController.getProducts);
+router.get("/", auth(["all"]), productController.getProducts);
 
 
 router.get("/u",

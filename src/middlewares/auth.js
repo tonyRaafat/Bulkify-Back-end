@@ -28,7 +28,7 @@ export const auth = (userTypes = []) => {
       }
 
       // Check if user type is allowed
-      if (!userTypes.includes(decoded.userType)) {
+      if (!userTypes.includes(decoded.userType) && !userTypes.includes("all")) {
         throw throwError("Unauthorized access", 403);
       }
 
@@ -43,6 +43,12 @@ export const auth = (userTypes = []) => {
           break;
         case "supplier":
           user = await Supplier.findById(decoded._id);
+          break;
+        case "all":
+          // If 'all' is specified, we can skip user type check
+          user = await Admin.findById(decoded._id) ||
+                 await Customer.findById(decoded._id) ||
+                 await Supplier.findById(decoded._id);
           break;
         default:
           throw throwError("Invalid user type", 400);
