@@ -328,7 +328,7 @@ export const getProducts = async (req, res, next) => {
 
     // If supplier, only show their products
     if (req.userType === "supplier") {
-      baseConditions.supplierId = req.user._id;
+      baseConditions.supplierId._id = req.user._id;
     }
 
     // Advanced search options
