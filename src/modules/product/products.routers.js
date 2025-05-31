@@ -87,14 +87,14 @@ router.use("/:productId/purchases", purchaseRouter);
  *                     totalItems:
  *                       type: integer
  */
-router.get("/", auth(["all"]), productController.getProducts);
+router.get("/", auth(["all", "customer","supplier","admin"]), productController.getProducts);
 
 
-router.get("/u",
-  auth(["customer"]),
-  authorize({ customer: ["verified"] }),
-  validate(getProductsForUserSchema),
-  productController.getProductsForUser);
+// router.get("/u",
+//   auth(["customer"]),
+//   authorize({ customer: ["verified"] }),
+//   validate(getProductsForUserSchema),
+//   productController.getProductsForUser);
 
 /**
  * @swagger
