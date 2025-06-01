@@ -276,12 +276,13 @@ export const updateProduct = async (req, res, next) => {
   }
 };
 
-/**
- * @swagger
+/** * @swagger
  * /products:
  *   get:
- *     summary: Get all products
+ *     summary: Get all products (Admin and Supplier only)
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -331,48 +332,9 @@ export const updateProduct = async (req, res, next) => {
  *                   type: integer
  *                 products:
  *                   type: array
- *                   description: Regular products with no active nearby purchases
+ *                   description: List of products
  *                   items:
  *                     $ref: '#/components/schemas/Product'
- *                 nearbyProducts:
- *                   type: array
- *                   description: Products with active purchases nearby (within 2km)
- *                   items:
- *                     type: object
- *                     properties:
- *                       $ref: '#/components/schemas/Product'
- *                       purchaseDetails:
- *                         type: object
- *                         properties:
- *                           purchaseId:
- *                             type: string
- *                             description: ID of the purchase
- *                           startDate:
- *                             type: string
- *                             format: date-time
- *                             description: When the purchase was started
- *                           endDate:
- *                             type: string
- *                             format: date-time
- *                             description: When the purchase will expire
- *                           totalQuantity:
- *                             type: number
- *                             description: Total quantity goal for the purchase
- *                           committedQuantity:
- *                             type: number
- *                             description: Current quantity committed by customers
- *                           progress:
- *                             type: number
- *                             description: Progress percentage toward target quantity (0-100)
- *                           remainingQuantity:
- *                             type: number
- *                             description: How many more items needed to reach the goal
- *                           distance:
- *                             type: number
- *                             description: Distance in kilometers from the user
- *                           hasParticipated:
- *                             type: boolean
- *                             description: Whether current user has participated in this purchase
  */
 export const getProducts = async (req, res, next) => {
   try {
@@ -419,108 +381,14 @@ export const getProducts = async (req, res, next) => {
 
     const total = await Product.countDocuments(baseConditions);
 
-    // For customers, separate products into normal products and nearby purchases
-    if (req.user && req.userType === "customer" && req.user.coordinates) {
-      // Get user coordinates
-      const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
-      
-      // Find all active purchases in the system
-      const activePurchases = await Purchase.find({
-        status: "Started" // Only get purchases that have been started but not completed
-      }).populate("productId");
-      
-      // Filter purchases to those within 2km of the user
-      const nearbyPurchasesList = activePurchases.filter(purchase => {
-        const distance = haversineDistance(userCoords, purchase.userLocation);
-        return distance <= 2; // 2km radius
-      });
-      
-      // Get product IDs with nearby purchases
-      const productsWithNearbyPurchases = new Set(nearbyPurchasesList.map(purchase => 
-        purchase.productId._id.toString()
-      ));
-        // Separate products into normal and nearby with additional purchase details
-      const normalProducts = [];
-      const nearbyProducts = [];
-      
-      // Import necessary models
-      const { CustomerPurchase } = await import("../../../database/models/customerPurchase.model.js");
-      
-      // For each product, check if it has nearby purchases and add purchase details
-      for (const product of products) {
-        if (productsWithNearbyPurchases.has(product._id.toString())) {
-          // Find related nearby purchases for this product
-          const productPurchases = nearbyPurchasesList.filter(purchase => 
-            purchase.productId._id.toString() === product._id.toString()
-          );
-          
-          // Enhance product with purchase details from the closest purchase
-          const productWithPurchaseDetails = await Promise.all(productPurchases.map(async purchase => {
-            // Calculate current committed quantity
-            const customerPurchases = await CustomerPurchase.find({ 
-              purchaseId: purchase._id,
-              status: { $in: ["Pending", "Completed"] }
-            });
-            
-            const committedQuantity = customerPurchases.reduce((total, cp) => total + cp.purchaseQuantity, 0);
-            
-            // Check if current user has already voted/participated in this purchase
-            const hasUserParticipated = await CustomerPurchase.exists({
-              purchaseId: purchase._id,
-              customerId: req.user._id
-            });
-            
-            // Calculate distance
-            const distance = haversineDistance(userCoords, purchase.userLocation);
-            
-            // Create enhanced product object with purchase details
-            return {
-              ...product.toObject(),
-              purchaseDetails: {
-                purchaseId: purchase._id,
-                startDate: purchase.startDate,
-                endDate: purchase.endDate,
-                totalQuantity: purchase.quantity,
-                committedQuantity,
-                progress: Math.round((committedQuantity / purchase.quantity) * 100),
-                remainingQuantity: Math.max(0, purchase.quantity - committedQuantity),
-                distance: parseFloat(distance.toFixed(2)),
-                hasParticipated: !!hasUserParticipated
-              }
-            };
-          }));
-          
-          // Sort by closest distance if multiple purchases are available
-          productWithPurchaseDetails.sort((a, b) => 
-            a.purchaseDetails.distance - b.purchaseDetails.distance
-          );
-          
-          // Add to nearby products array (take the closest one only)
-          nearbyProducts.push(productWithPurchaseDetails[0]);
-        } else {
-          normalProducts.push(product);
-        }
-      }
-      
-      res.status(200).json({
-        message: "Products retrieved successfully",
-        currentPage: apiFeatures.page,
-        totalPages: Math.ceil(total / apiFeatures.limit),
-        total,
-        products: normalProducts,
-        nearbyProducts
-      });
-    } else {
-      // For non-customers or customers without coordinates, return all products normally
-      res.status(200).json({
-        message: "Products retrieved successfully",
-        currentPage: apiFeatures.page,
-        totalPages: Math.ceil(total / apiFeatures.limit),
-        total,
-        products,
-        nearbyProducts: [] // Empty array for non-customers
-      });
-    }
+    // Return all products normally (no special handling for nearby products)
+    res.status(200).json({
+      message: "Products retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      products
+    });
   } catch (error) {
     next(error);
   }
@@ -1240,4 +1108,389 @@ const calculateProductAverageRating = async (productId) => {
 
   const sum = ratings.reduce((total, rating) => total + rating.rate, 0);
   return +(sum / ratings.length).toFixed(1); // Round to 1 decimal place
+};
+
+/**
+ * @swagger
+ * /products/regular:
+ *   get:
+ *     summary: Get products that are not in nearby purchases
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *         description: Sort field and order (e.g., price,-createdAt)
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price filter
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price filter
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category ID
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search term for product name
+ *     responses:
+ *       200:
+ *         description: List of regular products (not in nearby purchases) retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 currentPage:
+ *                   type: integer
+ *                 totalPages:
+ *                   type: integer
+ *                 total:
+ *                   type: integer
+ *                 products:
+ *                   type: array
+ *                   description: Regular products with no active nearby purchases
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ */
+export const getRegularProducts = async (req, res, next) => {
+  try {
+    // Base query conditions
+    const baseConditions = {};
+
+    // If customer, only show approved products
+    if (!req.user || req.userType === "customer" || req.userType === "anonymous") {
+      baseConditions.isApproved = true;
+    }
+    
+
+    // Advanced search options
+    if (req.query.minPrice) {
+      baseConditions.price = { $gte: parseFloat(req.query.minPrice) };
+    }
+    if (req.query.maxPrice) {
+      baseConditions.price = {
+        ...baseConditions.price,
+        $lte: parseFloat(req.query.maxPrice),
+      };
+    }
+    if (req.query.category) {
+      baseConditions.categoryId = req.query.category;
+    }
+
+    const query = Product.find(baseConditions);
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .search(["name"])
+      .select();
+
+    // Fetch all products based on query
+    let products = await apiFeatures.query.populate([
+      { path: "supplierId", select: "fullName supplierRate" },
+      { path: "categoryId", select: "name" },
+    ]);
+
+    // Get total count for pagination
+    const total = await Product.countDocuments(baseConditions);
+    
+    // For customers with coordinates, filter out products with nearby purchases
+    if (req.user && req.userType === "customer" && req.user.coordinates) {
+      // Get user coordinates
+      const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
+      
+      // Find all active purchases in the system
+      const activePurchases = await Purchase.find({
+        status: "Started" // Only get purchases that have been started but not completed
+      }).populate("productId");
+      
+      // Filter purchases to those within 2km of the user
+      const nearbyPurchases = activePurchases.filter(purchase => {
+        const distance = haversineDistance(userCoords, purchase.userLocation);
+        return distance <= 2; // 2km radius
+      });
+      
+      // Get product IDs with nearby purchases to exclude them
+      const productsWithNearbyPurchases = new Set(nearbyPurchases.map(purchase => 
+        purchase.productId._id.toString()
+      ));
+      
+      // Filter out products that have nearby purchases
+      products = products.filter(product => 
+        !productsWithNearbyPurchases.has(product._id.toString())
+      );
+    }
+    
+    res.status(200).json({
+      message: "Regular products retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      products
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @swagger
+ * /products/nearby:
+ *   get:
+ *     summary: Get products with nearby active purchases
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *         description: Sort field and order (e.g., price,-createdAt)
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category ID
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search term for product name
+ *     responses:
+ *       200:
+ *         description: List of products with nearby purchases retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 currentPage:
+ *                   type: integer
+ *                 totalPages:
+ *                   type: integer
+ *                 total:
+ *                   type: integer
+ *                 nearbyProducts:
+ *                   type: array
+ *                   description: Products with active purchases nearby (within 2km)
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       price:
+ *                         type: number
+ *                       quantity:
+ *                         type: number
+ *                       bulkThreshold:
+ *                         type: number
+ *                       imageSource:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       supplierId:
+ *                         type: object
+ *                       categoryId:
+ *                         type: object
+ *                       purchaseDetails:
+ *                         type: object
+ *                         properties:
+ *                           purchaseId:
+ *                             type: string
+ *                             description: ID of the purchase
+ *                           startDate:
+ *                             type: string
+ *                             format: date-time
+ *                             description: When the purchase was started
+ *                           endDate:
+ *                             type: string
+ *                             format: date-time
+ *                             description: When the purchase will expire
+ *                           totalQuantity:
+ *                             type: number
+ *                             description: Total quantity goal for the purchase
+ *                           committedQuantity:
+ *                             type: number
+ *                             description: Current quantity committed by customers
+ *                           progress:
+ *                             type: number
+ *                             description: Progress percentage toward target quantity (0-100)
+ *                           remainingQuantity:
+ *                             type: number
+ *                             description: How many more items needed to reach the goal
+ *                           distance:
+ *                             type: number
+ *                             description: Distance in kilometers from the user
+ *                           hasParticipated:
+ *                             type: boolean
+ *                             description: Whether current user has participated in this purchase
+ */
+export const getNearbyPurchaseProducts = async (req, res, next) => {
+  try {
+    // Return empty array if not a customer or missing coordinates
+    if (!req.user || req.userType !== "customer" || !req.user.coordinates) {
+      return res.status(200).json({
+        message: "No nearby products available",
+        currentPage: 1,
+        totalPages: 0,
+        total: 0,
+        nearbyProducts: []
+      });
+    }
+
+    // Get user coordinates
+    const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
+    
+    // Find all active purchases in the system
+    const activePurchases = await Purchase.find({
+      status: "Started" // Only get purchases that have been started but not completed
+    }).populate("productId");
+    
+    // Filter purchases to those within 2km of the user
+    const nearbyPurchasesList = activePurchases.filter(purchase => {
+      const distance = haversineDistance(userCoords, purchase.userLocation);
+      return distance <= 2; // 2km radius
+    });
+    
+    // If no nearby purchases, return empty array
+    if (nearbyPurchasesList.length === 0) {
+      return res.status(200).json({
+        message: "No nearby products available",
+        currentPage: 1,
+        totalPages: 0,
+        total: 0,
+        nearbyProducts: []
+      });
+    }
+    
+    // Get product IDs with nearby purchases
+    const productIds = nearbyPurchasesList.map(purchase => 
+      purchase.productId._id.toString()
+    );
+    
+    // Create base conditions for query
+    const baseConditions = {
+      _id: { $in: productIds },
+      isApproved: true
+    };
+    
+    // Add category filter if provided
+    if (req.query.category) {
+      baseConditions.categoryId = req.query.category;
+    }
+    
+    // Create query
+    const query = Product.find(baseConditions);
+    
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .search(["name"])
+      .select();
+    
+    // Get products
+    const products = await apiFeatures.query.populate([
+      { path: "supplierId", select: "fullName supplierRate" },
+      { path: "categoryId", select: "name" },
+    ]);
+    
+    // Get total for pagination
+    const total = await Product.countDocuments(baseConditions);
+    
+    // Import necessary models
+    const { CustomerPurchase } = await import("../../../database/models/customerPurchase.model.js");
+    
+    // Create enhanced product objects with purchase details
+    const nearbyProducts = await Promise.all(products.map(async (product) => {
+      // Find related nearby purchases for this product
+      const productPurchases = nearbyPurchasesList.filter(purchase => 
+        purchase.productId._id.toString() === product._id.toString()
+      );
+      
+      // Process purchases for this product
+      const enhancedProducts = await Promise.all(productPurchases.map(async purchase => {
+        // Calculate current committed quantity
+        const customerPurchases = await CustomerPurchase.find({ 
+          purchaseId: purchase._id,
+          status: { $in: ["Pending", "Completed"] }
+        });
+        
+        const committedQuantity = customerPurchases.reduce((total, cp) => total + cp.purchaseQuantity, 0);
+        
+        // Check if current user has already voted/participated in this purchase
+        const hasUserParticipated = await CustomerPurchase.exists({
+          purchaseId: purchase._id,
+          customerId: req.user._id
+        });
+        
+        // Calculate distance
+        const distance = haversineDistance(userCoords, purchase.userLocation);
+        
+        // Create enhanced product object with purchase details
+        return {
+          ...product.toObject(),
+          purchaseDetails: {
+            purchaseId: purchase._id,
+            startDate: purchase.startDate,
+            endDate: purchase.endDate,
+            totalQuantity: purchase.quantity,
+            committedQuantity,
+            progress: Math.round((committedQuantity / purchase.quantity) * 100),
+            remainingQuantity: Math.max(0, purchase.quantity - committedQuantity),
+            distance: parseFloat(distance.toFixed(2)),
+            hasParticipated: !!hasUserParticipated
+          }
+        };
+      }));
+      
+      // Sort by closest distance if multiple purchases are available
+      enhancedProducts.sort((a, b) => 
+        a.purchaseDetails.distance - b.purchaseDetails.distance
+      );
+      
+      // Return the closest one only
+      return enhancedProducts[0];
+    }));
+    
+    res.status(200).json({
+      message: "Nearby products retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      nearbyProducts
+    });
+  } catch (error) {
+    next(error);
+  }
 };

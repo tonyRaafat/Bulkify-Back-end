@@ -87,8 +87,12 @@ router.use("/:productId/purchases", purchaseRouter);
  *                     totalItems:
  *                       type: integer
  */
-router.get("/", auth(["all", "customer","supplier","admin"]), productController.getProducts);
+router.get("/", auth(["supplier","admin"]), productController.getProducts);
 
+// Special product routes for regular and nearby products
+// These must be defined BEFORE the /:id route to prevent Express from treating "regular" and "nearby" as IDs
+router.get("/regular", auth(["all", "customer"]), productController.getRegularProducts);
+router.get("/nearby", auth(["customer"]), productController.getNearbyPurchaseProducts);
 
 // router.get("/u",
 //   auth(["customer"]),

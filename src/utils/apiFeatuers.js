@@ -8,7 +8,7 @@ export class ApiFeatures {
     let page = parseInt(this.queryString.page) || 1;
     if (page < 1) page = 1;
     
-    let limit = parseInt(this.queryString.limit) || 5;
+    let limit = parseInt(this.queryString.limit) || 10;
     if (limit < 1) limit = 10;
     
     const skip = (page - 1) * limit;
