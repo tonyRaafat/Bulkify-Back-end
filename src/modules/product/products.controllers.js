@@ -1402,7 +1402,12 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
     
     // Get product IDs with nearby purchases
     const productIds = nearbyPurchasesList.map(purchase => 
-      purchase.productId._id.toString()
+    {
+      if(purchase.productId && purchase.productId._id){
+
+        return purchase.productId._id.toString()
+      }
+    }
     );
     
     // Create base conditions for query
