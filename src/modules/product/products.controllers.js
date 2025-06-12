@@ -1374,7 +1374,15 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
     const activePurchases = await Purchase.find({
       status: "Started" // Only get purchases that have been started but not completed
     }).populate("productId");
-    
+    if( !activePurchases || activePurchases.length === 0) {
+      return res.status(200).json({
+        message: "No nearby products available",
+        currentPage: 1,
+        totalPages: 0,
+        total: 0,
+        nearbyProducts: []
+      });
+    }
     // Filter purchases to those within 2km of the user
     const nearbyPurchasesList = activePurchases.filter(purchase => {
       const distance = haversineDistance(userCoords, purchase.userLocation);
