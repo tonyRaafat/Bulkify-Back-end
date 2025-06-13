@@ -64,12 +64,9 @@ export const generateInvoiceHTML = (invoice) => {
 
 
 import path from "path";
-import { createInvoice } from '../../services/invoice.js'
 import { payment } from '../../services/payment.js';
 import { Customer } from '../../../database/models/customer.model.js';
 import { sendEmail } from '../../utils/emailService.js';
-
-const invoicePath = path.join(process.cwd(), "invoices", "invoice.pdf"); // Save inside project
 
 
 
@@ -345,6 +342,25 @@ export const successPaymentForVoting = async (req, res, next) => {
 
     const product = customerPurchase.productId;
     // 6. create invoice
+
+    // 6. Create Invoice
+
+    const invoice = {
+      name: `${user.firstName} ${user.lastName}`,
+      items: [{
+        title: product.name,
+        price: product.price,
+        quantity: customerPurchase.purchaseQuantity,
+        finalPrice: product.price,
+        description: product.description,
+      }],
+      totalPrice: product.price * customerPurchase.purchaseQuantity,
+      paid: product.price * customerPurchase.purchaseQuantity,
+      city: user.city,
+      street: user.street,
+      homeNumber: user.homeNumber
+    };
+
     const invoiceHTML = generateInvoiceHTML(invoice);
 
     // 7. Send Email
