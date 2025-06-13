@@ -22,6 +22,45 @@ const haversineDistance = (coords1, coords2) => {
   return R * c; // Distance in km
 };
 
+export const generateInvoiceHTML = (invoice) => {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h1 style="color: #333;">Invoice</h1>
+      
+      <div style="margin-bottom: 20px;">
+        <p><strong>Name:</strong> ${invoice.name}</p>
+        <p><strong>Address:</strong> ${invoice.street}, ${invoice.city}, Home No. ${invoice.homeNumber}</p>
+      </div>
+      
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <thead>
+          <tr>
+            <th style="border: 1px solid #ccc; padding: 10px; text-align: left;">Title</th>
+            <th style="border: 1px solid #ccc; padding: 10px; text-align: left;">Description</th>
+            <th style="border: 1px solid #ccc; padding: 10px; text-align: left;">Unit Price</th>
+            <th style="border: 1px solid #ccc; padding: 10px; text-align: left;">Quantity</th>
+            <th style="border: 1px solid #ccc; padding: 10px; text-align: left;">Final Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${invoice.items.map(item => `
+            <tr>
+              <td style="border: 1px solid #ccc; padding: 10px;">${item.title}</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">${item.description}</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">$${item.price.toFixed(2)}</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">${item.quantity}</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">$${(item.price * item.quantity).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div style="font-weight: bold; font-size: 1.1em; text-align: right;">
+        Total Paid: $${invoice.paid.toFixed(2)}
+      </div>
+    </div>
+  `;
+};
 
 
 import path from "path";
@@ -155,8 +194,9 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
     const product = customerPurchase.productId;
 
     // 6. Create Invoice
+
     const invoice = {
-      name: user.firstName + " " + user.lastName,
+      name: `${user.firstName} ${user.lastName}`,
       items: [{
         title: product.name,
         price: product.price,
@@ -171,11 +211,18 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
       homeNumber: user.homeNumber
     };
 
-    const tempPath = "invoice.pdf";
-    createInvoice(invoice, tempPath);
+    const invoiceHTML = generateInvoiceHTML(invoice);
 
-    // 7. Send Invoice By Email 
-    await sendEmail(user.email, "Your Invoice", "Thank you for your purchase!", tempPath);
+    // 7. Send Email
+    await sendEmail(
+      user.email,
+      "Your Invoice",
+      {
+        text: "Thank you for your purchase! You can find your invoice below.",
+        html: invoiceHTML
+      }
+    );
+
 
     // 8. Send Success Response
     return res.status(200).json({
@@ -297,30 +344,18 @@ export const successPaymentForVoting = async (req, res, next) => {
     }
 
     const product = customerPurchase.productId;
+    // 6. create invoice
+    const invoiceHTML = generateInvoiceHTML(invoice);
 
-    // 6. Create Invoice
-    const invoice = {
-      name: user.firstName + " " + user.lastName,
-      items: [{
-        title: product.name,
-        price: product.price,
-        quantity: customerPurchase.purchaseQuantity,
-        finalPrice: product.price,
-        description: product.description,
-      }],
-      totalPrice: product.price * customerPurchase.purchaseQuantity,
-      paid: product.price * customerPurchase.purchaseQuantity,
-      city: user.city,
-      street: user.street,
-      homeNumber: user.homeNumber
-    };
-
-    const tempPath = "invoice.pdf";
-    createInvoice(invoice, tempPath);
-
-    // 7. Send Invoice By Email 
-    await sendEmail(user.email, "Your Invoice", "Thank you for your purchase!", tempPath);
-
+    // 7. Send Email
+    await sendEmail(
+      user.email,
+      "Your Invoice",
+      {
+        text: "Thank you for your purchase! You can find your invoice below.",
+        html: invoiceHTML
+      }
+    );
     // 8. Send Success Response
     return res.status(200).json({
       message: "Payment successful. Invoice has been sent to your email."
