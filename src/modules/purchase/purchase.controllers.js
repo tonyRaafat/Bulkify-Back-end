@@ -93,7 +93,7 @@ export const startPurchase = async (req, res, next) => {
     // Check other nearby purchases within 2km
     const purchases = await Purchase.find({ productId });
     for (let purchase of purchases) {
-      if (haversineDistance(userLocation, purchase.userLocation) <= 2) {
+      if (haversineDistance(userLocation, purchase.userLocation) <= 2 && purchase.status != "Waiting Payment" ) {
         return res.status(403).json({ message: "Another purchase is in progress within 2km" });
       }
     }
