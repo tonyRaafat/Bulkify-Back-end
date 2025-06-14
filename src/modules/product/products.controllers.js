@@ -4,6 +4,8 @@ import cloudinary from "../../utils/cloudinary.js";
 import { ApiFeatures } from "../../utils/apiFeatuers.js";
 import Purchase from "../../../database/models/purchase.model.js";
 import { Category } from "../../../database/models/category.model.js";
+import { CustomerPurchase } from "../../../database/models/customerPurchase.model.js";
+import { ProductRate } from "../../../database/models/productRate.model.js";
 
 
 const haversineDistance = (coords1, coords2) => {
@@ -664,16 +666,21 @@ export const deleteProduct = async (req, res, next) => {
           console.error(`Failed to delete image from cloudinary: ${error.message}`);
         }
       }
-    }
-
-    // Remove product from category's products array
+    }    // Remove product from category's products array
     if (product.categoryId) {
       const { Category } = await import("../../../database/models/category.model.js");
       await Category.findByIdAndUpdate(
         product.categoryId,
         { $pull: { products: product._id } }
       );
-    }
+    }    // Delete all purchases related to this product
+    await Purchase.deleteMany({ productId: product._id });
+
+    // Delete all customer purchases related to this product
+    await CustomerPurchase.deleteMany({ productId: product._id });
+
+    // Delete all product ratings related to this product
+    await ProductRate.deleteMany({ productId: product._id });
 
     res.status(200).json({
       message: "Product deleted successfully",
@@ -756,9 +763,7 @@ export const deleteSupplierProducts = async (supplierId) => {
   try {
     // Find all products by this supplier
     const products = await Product.find({ supplierId });
-    const { Category } = await import("../../../database/models/category.model.js");
-
-    // Delete each product's images from cloudinary and remove from categories
+    const { Category } = await import("../../../database/models/category.model.js");    // Delete each product's images from cloudinary and remove from categories
     for (const product of products) {
       // Remove product from category's products array
       if (product.categoryId) {
@@ -781,7 +786,14 @@ export const deleteSupplierProducts = async (supplierId) => {
             console.error(`Failed to delete image from cloudinary: ${error.message}`);
           }
         }
-      }
+      }      // Delete all purchases related to this product
+      await Purchase.deleteMany({ productId: product._id });
+
+      // Delete all customer purchases related to this product
+      await CustomerPurchase.deleteMany({ productId: product._id });
+
+      // Delete all product ratings related to this product
+      await ProductRate.deleteMany({ productId: product._id });
     }
 
     // Delete all products by this supplier
