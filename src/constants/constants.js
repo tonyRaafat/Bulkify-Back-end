@@ -1,7 +1,6 @@
 export const phoneRegex = /^01[0125][0-9]{8}$/;
 export const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-export const nationalIdRegex = /^\d{14}$/;
 
 export const englishNameRegex = /^[a-zA-Z\s]+$/;
 // Fix the Arabic regex by removing quotes and fixing the pattern
