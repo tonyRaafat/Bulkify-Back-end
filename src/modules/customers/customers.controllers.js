@@ -382,10 +382,10 @@ export const updateProfile = async (req, res, next) => {
     }
 
     // If updating email check uniqueness
-    if (updates.email ) {
+    if (updates.email) {
       const existingCustomer = await Customer.findOne({
         _id: { $ne: req.user._id },
-        $or: [{ email: updates.email },],
+        $or: [{ email: updates.email }],
       });
 
       if (existingCustomer) {
@@ -427,6 +427,239 @@ export const deleteAccount = async (req, res, next) => {
 
     res.status(200).json({
       message: "Account deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @swagger
+ * /customers/orders-history:
+ *   get:
+ *     summary: Get customer's orders history
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of orders per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [Pending, Completed, Cancelled, "Waiting payment"]
+ *         description: Filter orders by status
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, updatedAt, purchaseQuantity]
+ *           default: createdAt
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order
+ *     responses:
+ *       200:
+ *         description: Orders history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     orders:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           purchaseQuantity:
+ *                             type: number
+ *                           status:
+ *                             type: string
+ *                           paymentMethod:
+ *                             type: string
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                           product:
+ *                             type: object
+ *                             properties:
+ *                               _id:
+ *                                 type: string
+ *                               name:
+ *                                 type: string
+ *                               price:
+ *                                 type: number
+ *                               imageSource:
+ *                                 type: array
+ *                                 items:
+ *                                   type: string
+ *                               category:
+ *                                 type: object
+ *                                 properties:
+ *                                   name:
+ *                                     type: string
+ *                               supplier:
+ *                                 type: object
+ *                                 properties:
+ *                                   businessName:
+ *                                     type: string
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         totalOrders:
+ *                           type: integer
+ *                         hasNextPage:
+ *                           type: boolean
+ *                         hasPrevPage:
+ *                           type: boolean
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+export const getOrdersHistory = async (req, res, next) => {
+  try {
+    const customerId = req.user._id;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    // Build filter object
+    const filter = { customerId };
+    if (status) {
+      filter.status = status;
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get orders with populated product details
+    const orders = await CustomerPurchase.find(filter)
+      .populate({
+        path: "productId",
+        select: "name price imageSource categoryId supplierId",
+        populate: [
+          {
+            path: "categoryId",
+            select: "name",
+            model: "Category",
+          },
+          {
+            path: "supplierId",
+            select: "businessName",
+            model: "Supplier",
+          },
+        ],
+      })
+      .populate({
+        path: "purchaseId",
+        select: "totalPrice orderDate",
+        model: "Purchase",
+      })
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Get total count for pagination
+    const totalOrders = await CustomerPurchase.countDocuments(filter);
+    const totalPages = Math.ceil(totalOrders / parseInt(limit));
+
+    // Transform the data for better response structure
+    const transformedOrders = orders.map((order) => ({
+      _id: order._id,
+      purchaseQuantity: order.purchaseQuantity,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      product: order.productId
+        ? {
+            _id: order.productId._id,
+            name: order.productId.name,
+            price: order.productId.price,
+            imageSource: order.productId.imageSource,
+            category: order.productId.categoryId
+              ? {
+                  name: order.productId.categoryId.name,
+                }
+              : null,
+            supplier: order.productId.supplierId
+              ? {
+                  businessName: order.productId.supplierId.businessName,
+                }
+              : null,
+          }
+        : null,
+      purchase: order.purchaseId
+        ? {
+            _id: order.purchaseId._id,
+            totalPrice: order.purchaseId.totalPrice,
+            orderDate: order.purchaseId.orderDate,
+          }
+        : null,
+    }));
+
+    // Pagination info
+    const pagination = {
+      currentPage: parseInt(page),
+      totalPages,
+      totalOrders,
+      hasNextPage: parseInt(page) < totalPages,
+      hasPrevPage: parseInt(page) > 1,
+      limit: parseInt(limit),
+    };
+
+    res.status(200).json({
+      success: true,
+      message: "Orders history retrieved successfully",
+      data: {
+        orders: transformedOrders,
+        pagination,
+      },
     });
   } catch (error) {
     next(error);

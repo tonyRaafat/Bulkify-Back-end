@@ -223,3 +223,26 @@ export const loginSchema = {
     }),
   }),
 };
+
+export const ordersHistorySchema = {
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1).messages({
+      "number.integer": "Page must be an integer",
+      "number.min": "Page must be at least 1",
+    }),
+    limit: Joi.number().integer().min(1).max(100).default(10).messages({
+      "number.integer": "Limit must be an integer",
+      "number.min": "Limit must be at least 1",
+      "number.max": "Limit cannot exceed 100",
+    }),
+    status: Joi.string().valid("Pending", "Completed", "Cancelled", "Waiting payment").messages({
+      "any.only": "Status must be one of: Pending, Completed, Cancelled, Waiting payment",
+    }),
+    sortBy: Joi.string().valid("createdAt", "updatedAt", "purchaseQuantity").default("createdAt").messages({
+      "any.only": "Sort by must be one of: createdAt, updatedAt, purchaseQuantity",
+    }),
+    sortOrder: Joi.string().valid("asc", "desc").default("desc").messages({
+      "any.only": "Sort order must be either asc or desc",
+    }),
+  }),
+};
