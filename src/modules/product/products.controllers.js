@@ -1257,13 +1257,13 @@ export const getRegularProducts = async (req, res, next) => {
 
     // Get total count for pagination
     const total = await Product.countDocuments(baseConditions);
-    
-    // For customers with coordinates, filter out products with nearby purchases
+      // For customers with coordinates, filter out products with nearby purchases
     if (req.user && req.userType === "customer" && req.user.coordinates) {
       // Get user coordinates
       const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
       
-      // Find all active purchases in the system
+      // Find all active purchases in the system (only non-expired ones)
+      const now = new Date();
       const activePurchases = await Purchase.find({
         status: PURCHASE_STATUS.STARTED,
         endDate: { $gt: now } // Only purchases that haven't ended yet
@@ -1418,12 +1418,13 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
 
     // Get user coordinates
     const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
-    
-    // Find all active purchases in the system
+      // Find all active purchases in the system (only started and not ended)
+    const now = new Date();
     const activePurchases = await Purchase.find({
       status: PURCHASE_STATUS.STARTED,
       endDate: { $gt: now } // Only purchases that haven't ended yet
     }).populate("productId");
+    
     if( !activePurchases || activePurchases.length === 0) {
       return res.status(200).json({
         message: "No nearby products available",
