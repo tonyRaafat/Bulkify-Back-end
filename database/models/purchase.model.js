@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { PURCHASE_STATUS } from '../../src/constants/constants.js';
 
 const purchaseSchema = new mongoose.Schema({
     startDate: {
@@ -8,14 +9,15 @@ const purchaseSchema = new mongoose.Schema({
     endDate: {
         type: Date,
         required: true,
-    },
-    quantity: {
+    },    quantity: {
         type: Number,
         required: true,
     }, // that the supplier put
     status: {
         type: String,
         required: true,
+        enum: Object.values(PURCHASE_STATUS),
+        default: PURCHASE_STATUS.WAITING_PAYMENT
     },
     productId: {
         type: mongoose.Schema.Types.ObjectId,

@@ -6,6 +6,46 @@ import Purchase from "../../../database/models/purchase.model.js";
 import { Category } from "../../../database/models/category.model.js";
 import { CustomerPurchase } from "../../../database/models/customerPurchase.model.js";
 import { ProductRate } from "../../../database/models/productRate.model.js";
+import { PURCHASE_STATUS, CUSTOMER_PURCHASE_STATUS } from "../../constants/constants.js";
+
+// Utility function to update expired purchases
+const updateExpiredPurchases = async () => {
+  try {
+    const now = new Date();
+    
+    // Find all purchases that have ended but are not marked as ended
+    const expiredPurchases = await Purchase.find({
+      endDate: { $lt: now },
+      status: { $in: [PURCHASE_STATUS.WAITING_PAYMENT, PURCHASE_STATUS.STARTED] }
+    });
+
+    // Update expired purchases to "Ended without purchase" status
+    if (expiredPurchases.length > 0) {
+      await Purchase.updateMany(
+        {
+          endDate: { $lt: now },
+          status: { $in: [PURCHASE_STATUS.WAITING_PAYMENT, PURCHASE_STATUS.STARTED] }
+        },
+        { status: PURCHASE_STATUS.ENDED_WITHOUT_PURCHASE }
+      );
+
+      // Also update related customer purchases to "Ended without purchase"
+      const expiredPurchaseIds = expiredPurchases.map(p => p._id);
+      await CustomerPurchase.updateMany(
+        {
+          purchaseId: { $in: expiredPurchaseIds },
+          status: { $in: [CUSTOMER_PURCHASE_STATUS.WAITING_PAYMENT, CUSTOMER_PURCHASE_STATUS.PENDING] }
+        },
+        { status: CUSTOMER_PURCHASE_STATUS.ENDED_WITHOUT_PURCHASE }
+      );
+    }
+
+    return expiredPurchases.length;
+  } catch (error) {
+    console.error('Error updating expired purchases:', error);
+    return 0;
+  }
+};
 
 
 const haversineDistance = (coords1, coords2) => {
@@ -1224,15 +1264,16 @@ export const getRegularProducts = async (req, res, next) => {
 
     // Get total count for pagination
     const total = await Product.countDocuments(baseConditions);
-    
-    // For customers with coordinates, filter out products with nearby purchases
+      // For customers with coordinates, filter out products with nearby purchases
     if (req.user && req.userType === "customer" && req.user.coordinates) {
       // Get user coordinates
       const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
       
-      // Find all active purchases in the system
+      // Find all active purchases in the system (only non-expired ones)
+      const now = new Date();
       const activePurchases = await Purchase.find({
-        status: "Started" // Only get purchases that have been started but not completed
+        status: PURCHASE_STATUS.STARTED,
+        endDate: { $gt: now } // Only purchases that haven't ended yet
       }).populate("productId");
       
       // Filter purchases to those within 2km of the user
@@ -1368,6 +1409,9 @@ export const getRegularProducts = async (req, res, next) => {
  */
 export const getNearbyPurchaseProducts = async (req, res, next) => {
   try {
+    // Update expired purchases first
+    await updateExpiredPurchases();
+
     // Return empty array if not a customer or missing coordinates
     if (!req.user || req.userType !== "customer" || !req.user.coordinates) {
       return res.status(200).json({
@@ -1381,11 +1425,13 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
 
     // Get user coordinates
     const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
-    
-    // Find all active purchases in the system
+      // Find all active purchases in the system (only started and not ended)
+    const now = new Date();
     const activePurchases = await Purchase.find({
-      status: "Started" // Only get purchases that have been started but not completed
+      status: PURCHASE_STATUS.STARTED,
+      endDate: { $gt: now } // Only purchases that haven't ended yet
     }).populate("productId");
+    
     if( !activePurchases || activePurchases.length === 0) {
       return res.status(200).json({
         message: "No nearby products available",
@@ -1395,6 +1441,7 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
         nearbyProducts: []
       });
     }
+    
     // Filter purchases to those within 2km of the user
     const nearbyPurchasesList = activePurchases.filter(purchase => {
       const distance = haversineDistance(userCoords, purchase.userLocation);
