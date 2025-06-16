@@ -269,7 +269,7 @@ export const login = async (req, res, next) => {
         userType: "supplier",
       },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" }
+      { expiresIn: "7d" }
     );
 
     // Return success response

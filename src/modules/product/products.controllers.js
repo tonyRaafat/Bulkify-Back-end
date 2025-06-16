@@ -4,7 +4,7 @@ import cloudinary from "../../utils/cloudinary.js";
 import { ApiFeatures } from "../../utils/apiFeatuers.js";
 import Purchase from "../../../database/models/purchase.model.js";
 import { Category } from "../../../database/models/category.model.js";
-
+import { CustomerPurchase } from "../../../database/models/customerPurchase.model.js";
 
 const haversineDistance = (coords1, coords2) => {
 
@@ -244,13 +244,13 @@ export const updateProduct = async (req, res, next) => {
     // Check if category is being updated
     if (updates.categoryId && updates.categoryId !== product.categoryId.toString()) {
       const { Category } = await import("../../../database/models/category.model.js");
-      
+
       // Remove product from old category
       await Category.findByIdAndUpdate(
         product.categoryId,
         { $pull: { products: product._id } }
       );
-      
+
       // Add product to new category
       await Category.findByIdAndUpdate(
         updates.categoryId,
@@ -550,12 +550,12 @@ export const getProduct = async (req, res, next) => {
       product.supplierId._id.toString() !== req.user._id.toString()
     ) {
       throw throwError("Unauthorized access", 403);
-    }    let nearbyPurchases = null;
+    } let nearbyPurchases = null;
 
     // Check for nearby purchases if the user is a customer
     if (req.user && req.userType === "customer" && req.user.coordinates) {
       const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
-      
+
       // Find active purchases for this product
       const activePurchases = await Purchase.find({
         productId: id,
@@ -568,16 +568,16 @@ export const getProduct = async (req, res, next) => {
 
       // Get customer purchase data for each nearby purchase
       const { CustomerPurchase } = await import("../../../database/models/customerPurchase.model.js");
-      
+
       nearbyPurchases = await Promise.all(nearbyPurchasesList.map(async purchase => {
         // Calculate current committed quantity
-        const customerPurchases = await CustomerPurchase.find({ 
+        const customerPurchases = await CustomerPurchase.find({
           purchaseId: purchase._id,
           status: { $in: ["Pending", "Completed"] }
         });
-        
+
         const committedQuantity = customerPurchases.reduce((total, cp) => total + cp.purchaseQuantity, 0);
-          // Check if current user has already voted on this purchase
+        // Check if current user has already voted on this purchase
         const hasUserVoted = req.user ? await CustomerPurchase.exists({
           purchaseId: purchase._id,
           customerId: req.user._id
@@ -674,7 +674,8 @@ export const deleteProduct = async (req, res, next) => {
         { $pull: { products: product._id } }
       );
     }
-
+    await Purchase.deleteMany({ productId: product._id });
+    await CustomerPurchase.deleteMany({ productId: product._id })
     res.status(200).json({
       message: "Product deleted successfully",
     });
@@ -1178,7 +1179,7 @@ export const getRegularProducts = async (req, res, next) => {
     if (!req.user || req.userType === "customer" || req.userType === "anonymous") {
       baseConditions.isApproved = true;
     }
-    
+
 
     // Advanced search options
     if (req.query.minPrice) {
@@ -1212,34 +1213,34 @@ export const getRegularProducts = async (req, res, next) => {
 
     // Get total count for pagination
     const total = await Product.countDocuments(baseConditions);
-    
+
     // For customers with coordinates, filter out products with nearby purchases
     if (req.user && req.userType === "customer" && req.user.coordinates) {
       // Get user coordinates
       const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
-      
+
       // Find all active purchases in the system
       const activePurchases = await Purchase.find({
         status: "Started" // Only get purchases that have been started but not completed
       }).populate("productId");
-      
+
       // Filter purchases to those within 2km of the user
       const nearbyPurchases = activePurchases.filter(purchase => {
         const distance = haversineDistance(userCoords, purchase.userLocation);
         return distance <= 2; // 2km radius
       });
-      
+
       // Get product IDs with nearby purchases to exclude them
-      const productsWithNearbyPurchases = new Set(nearbyPurchases.map(purchase => 
+      const productsWithNearbyPurchases = new Set(nearbyPurchases.map(purchase =>
         purchase.productId._id.toString()
       ));
-      
+
       // Filter out products that have nearby purchases
-      products = products.filter(product => 
+      products = products.filter(product =>
         !productsWithNearbyPurchases.has(product._id.toString())
       );
     }
-    
+
     res.status(200).json({
       message: "Regular products retrieved successfully",
       currentPage: apiFeatures.page,
@@ -1369,12 +1370,12 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
 
     // Get user coordinates
     const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
-    
+
     // Find all active purchases in the system
     const activePurchases = await Purchase.find({
       status: "Started" // Only get purchases that have been started but not completed
     }).populate("productId");
-    if( !activePurchases || activePurchases.length === 0) {
+    if (!activePurchases || activePurchases.length === 0) {
       return res.status(200).json({
         message: "No nearby products available",
         currentPage: 1,
@@ -1388,7 +1389,7 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
       const distance = haversineDistance(userCoords, purchase.userLocation);
       return distance <= 2; // 2km radius
     });
-    
+
     // If no nearby purchases, return empty array
     if (nearbyPurchasesList.length === 0) {
       return res.status(200).json({
@@ -1399,31 +1400,30 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
         nearbyProducts: []
       });
     }
-    
+
     // Get product IDs with nearby purchases
-    const productIds = nearbyPurchasesList.map(purchase => 
-    {
-      if(purchase.productId && purchase.productId._id){
+    const productIds = nearbyPurchasesList.map(purchase => {
+      if (purchase.productId && purchase.productId._id) {
 
         return purchase.productId._id.toString()
       }
     }
     );
-    
+
     // Create base conditions for query
     const baseConditions = {
       _id: { $in: productIds },
       isApproved: true
     };
-    
+
     // Add category filter if provided
     if (req.query.category) {
       baseConditions.categoryId = req.query.category;
     }
-    
+
     // Create query
     const query = Product.find(baseConditions);
-    
+
     // Apply API features
     const apiFeatures = new ApiFeatures(query, req.query)
       .pagination()
@@ -1431,45 +1431,45 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
       .sort()
       .search(["name"])
       .select();
-    
+
     // Get products
     const products = await apiFeatures.query.populate([
       { path: "supplierId", select: "fullName supplierRate" },
       { path: "categoryId", select: "name" },
     ]);
-    
+
     // Get total for pagination
     const total = await Product.countDocuments(baseConditions);
-    
+
     // Import necessary models
     const { CustomerPurchase } = await import("../../../database/models/customerPurchase.model.js");
-    
+
     // Create enhanced product objects with purchase details
     const nearbyProducts = await Promise.all(products.map(async (product) => {
       // Find related nearby purchases for this product
-      const productPurchases = nearbyPurchasesList.filter(purchase => 
+      const productPurchases = nearbyPurchasesList.filter(purchase =>
         purchase.productId._id.toString() === product._id.toString()
       );
-      
+
       // Process purchases for this product
       const enhancedProducts = await Promise.all(productPurchases.map(async purchase => {
         // Calculate current committed quantity
-        const customerPurchases = await CustomerPurchase.find({ 
+        const customerPurchases = await CustomerPurchase.find({
           purchaseId: purchase._id,
           status: { $in: ["Pending", "Completed"] }
         });
-        
+
         const committedQuantity = customerPurchases.reduce((total, cp) => total + cp.purchaseQuantity, 0);
-        
+
         // Check if current user has already voted/participated in this purchase
         const hasUserParticipated = await CustomerPurchase.exists({
           purchaseId: purchase._id,
           customerId: req.user._id
         });
-        
+
         // Calculate distance
         const distance = haversineDistance(userCoords, purchase.userLocation);
-        
+
         // Create enhanced product object with purchase details
         return {
           ...product.toObject(),
@@ -1486,16 +1486,16 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
           }
         };
       }));
-      
+
       // Sort by closest distance if multiple purchases are available
-      enhancedProducts.sort((a, b) => 
+      enhancedProducts.sort((a, b) =>
         a.purchaseDetails.distance - b.purchaseDetails.distance
       );
-      
+
       // Return the closest one only
       return enhancedProducts[0];
     }));
-    
+
     res.status(200).json({
       message: "Nearby products retrieved successfully",
       currentPage: apiFeatures.page,

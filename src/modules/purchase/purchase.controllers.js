@@ -93,7 +93,7 @@ export const startPurchase = async (req, res, next) => {
     // Check other nearby purchases within 2km
     const purchases = await Purchase.find({ productId });
     for (let purchase of purchases) {
-      if (haversineDistance(userLocation, purchase.userLocation) <= 2 && purchase.status != "Waiting Payment" ) {
+      if (haversineDistance(userLocation, purchase.userLocation) <= 2 && purchase.status != "Waiting Payment") {
         return res.status(403).json({ message: "Another purchase is in progress within 2km" });
       }
     }
@@ -380,4 +380,28 @@ export const successPaymentForVoting = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const webhook = async (req, res) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.SIGNING_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed.', err.message);
+    return res.status(400).send('Webhook Error');
+  }
+
+  const { purchaseId } = event.data.object.metadata;
+
+  if (event.type === 'checkout.session.completed') {
+    // await Purchase.findOneAndUpdate({ _id: purchaseId }, { status: "placed" });
+    // await CustomerPurchase.updateMany({ purchaseId }, { status: "Pending" });
+    return res.status(200).json({ msg: "done" });
+  }
+
+  // Acknowledge all other events (optional: handle them specifically)
+  return res.status(200).json({ msg: "event received" });
 };

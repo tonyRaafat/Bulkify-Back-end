@@ -231,6 +231,10 @@ purchaseRouter.get('/vote/successPayment/:purchaseId/:userId',
   PC.successPaymentForVoting
 )
 
+
+//
+purchaseRouter.post('/webhook', express.raw({ type: 'application/json' }), PC.webhook);
+
 // cancel order
 
 export default purchaseRouter;
