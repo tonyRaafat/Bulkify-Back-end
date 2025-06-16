@@ -222,7 +222,7 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
 
 
     // 8. Send Success Response
-    return res.redirect('https://bulkify-web.netlify.app/');
+    return res.redirect('https://bulkify-web.netlify.app/?message=Payment%20success');
 
 
   } catch (error) {
@@ -372,7 +372,7 @@ export const successPaymentForVoting = async (req, res, next) => {
       }
     );
     // 8. Send Success Response
-    return res.redirect('https://bulkify-web.netlify.app/');
+    return res.redirect('https://bulkify-web.netlify.app/?message=Payment%20success');
 
 
   } catch (error) {
