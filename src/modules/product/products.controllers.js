@@ -4,6 +4,48 @@ import cloudinary from "../../utils/cloudinary.js";
 import { ApiFeatures } from "../../utils/apiFeatuers.js";
 import Purchase from "../../../database/models/purchase.model.js";
 import { Category } from "../../../database/models/category.model.js";
+import { CustomerPurchase } from "../../../database/models/customerPurchase.model.js";
+import { ProductRate } from "../../../database/models/productRate.model.js";
+import { PURCHASE_STATUS, CUSTOMER_PURCHASE_STATUS } from "../../constants/constants.js";
+
+// Utility function to update expired purchases
+const updateExpiredPurchases = async () => {
+  try {
+    const now = new Date();
+    
+    // Find all purchases that have ended but are not marked as ended
+    const expiredPurchases = await Purchase.find({
+      endDate: { $lt: now },
+      status: { $in: [PURCHASE_STATUS.WAITING_PAYMENT, PURCHASE_STATUS.STARTED] }
+    });
+
+    // Update expired purchases to "Ended without purchase" status
+    if (expiredPurchases.length > 0) {
+      await Purchase.updateMany(
+        {
+          endDate: { $lt: now },
+          status: { $in: [PURCHASE_STATUS.WAITING_PAYMENT, PURCHASE_STATUS.STARTED] }
+        },
+        { status: PURCHASE_STATUS.ENDED_WITHOUT_PURCHASE }
+      );
+
+      // Also update related customer purchases to "Ended without purchase"
+      const expiredPurchaseIds = expiredPurchases.map(p => p._id);
+      await CustomerPurchase.updateMany(
+        {
+          purchaseId: { $in: expiredPurchaseIds },
+          status: { $in: [CUSTOMER_PURCHASE_STATUS.WAITING_PAYMENT, CUSTOMER_PURCHASE_STATUS.PENDING] }
+        },
+        { status: CUSTOMER_PURCHASE_STATUS.ENDED_WITHOUT_PURCHASE }
+      );
+    }
+
+    return expiredPurchases.length;
+  } catch (error) {
+    console.error('Error updating expired purchases:', error);
+    return 0;
+  }
+};
 
 
 const haversineDistance = (coords1, coords2) => {
