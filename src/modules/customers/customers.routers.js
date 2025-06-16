@@ -8,6 +8,7 @@ import {
   resetPasswordSchema,
   registerValidation,
   loginSchema,
+  ordersHistorySchema,
 } from "./customers.validations.js";
 
 const router = express.Router();
@@ -454,6 +455,66 @@ router.delete(
   auth(["customer"]),
   authorize({ customer: ["all"] }),
   customerController.deleteAccount
+);
+
+/**
+ * @swagger
+ * /customers/orders-history:
+ *   get:
+ *     summary: Get customer's orders history
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of orders per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [Pending, Completed, Cancelled, "Waiting payment"]
+ *         description: Filter orders by status
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, updatedAt, purchaseQuantity]
+ *           default: createdAt
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sort order
+ *     responses:
+ *       200:
+ *         description: Orders history retrieved successfully
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+router.get(
+  "/orders-history",
+  auth(["customer"]),
+  authorize({ customer: ["all"] }),
+  validate(ordersHistorySchema),
+  customerController.getOrdersHistory
 );
 
 export default router;

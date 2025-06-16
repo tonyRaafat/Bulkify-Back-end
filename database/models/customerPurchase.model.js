@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { CUSTOMER_PURCHASE_STATUS } from "../../src/constants/constants.js";
 
 const customerPurchaseSchema = new mongoose.Schema(
   {
@@ -23,8 +24,9 @@ const customerPurchaseSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Pending", "Completed", "Cancelled", "Waiting payment"],
+      enum: Object.values(CUSTOMER_PURCHASE_STATUS),
       required: true,
+      default: CUSTOMER_PURCHASE_STATUS.WAITING_PAYMENT
     },
     paymentMethod: {
       type: String,

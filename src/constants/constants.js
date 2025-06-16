@@ -1,7 +1,6 @@
 export const phoneRegex = /^01[0125][0-9]{8}$/;
 export const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-export const nationalIdRegex = /^\d{14}$/;
 
 export const englishNameRegex = /^[a-zA-Z\s]+$/;
 // Fix the Arabic regex by removing quotes and fixing the pattern
@@ -18,3 +17,21 @@ export const streetRegex = /^[a-zA-Z0-9\u0600-\u06FF\s\.\,\-]{3,100}$/; // Allow
 
 // Date format regex for MM-DD-YYYY
 export const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
+
+// Purchase Status Enums
+export const PURCHASE_STATUS = {
+  WAITING_PAYMENT: "Waiting Payment",
+  STARTED: "Started",
+  COMPLETED: "Completed",
+  ENDED: "Ended",
+  ENDED_WITHOUT_PURCHASE: "Ended without purchase"
+};
+
+// Customer Purchase Status Enums
+export const CUSTOMER_PURCHASE_STATUS = {
+  WAITING_PAYMENT: "Waiting payment",
+  PENDING: "Pending",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+  ENDED_WITHOUT_PURCHASE: "Ended without purchase"
+};
