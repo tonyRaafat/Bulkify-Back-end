@@ -222,9 +222,8 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
 
 
     // 8. Send Success Response
-    return res.status(200).json({
-      message: "Payment successful. Invoice has been sent to your email."
-    });
+    return res.redirect('https://bulkify-web.netlify.app/');
+
 
   } catch (error) {
     next(error);
@@ -373,9 +372,8 @@ export const successPaymentForVoting = async (req, res, next) => {
       }
     );
     // 8. Send Success Response
-    return res.status(200).json({
-      message: "Payment successful. Invoice has been sent to your email."
-    });
+    return res.redirect('https://bulkify-web.netlify.app/');
+
 
   } catch (error) {
     next(error);
