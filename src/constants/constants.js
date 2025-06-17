@@ -24,7 +24,7 @@ export const PURCHASE_STATUS = {
   STARTED: "Started",
   COMPLETED: "Completed",
   ENDED: "Ended",
-  ENDED_WITHOUT_PURCHASE: "Ended without purchase"
+  ENDED_WITHOUT_PURCHASE: "Ended without purchase",
 };
 
 // Customer Purchase Status Enums
@@ -33,5 +33,62 @@ export const CUSTOMER_PURCHASE_STATUS = {
   PENDING: "Pending",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
-  ENDED_WITHOUT_PURCHASE: "Ended without purchase"
+  ENDED_WITHOUT_PURCHASE: "Ended without purchase",
 };
+
+// Payment Status
+export const paymentSuccessHtml = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Payment Successful</title>
+    <style>
+      body {
+        background: linear-gradient(to right, #00c6ff, #0072ff);
+        color: white;
+        text-align: center;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding-top: 100px;
+      }
+      .success-box {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 40px;
+        display: inline-block;
+        animation: pop 0.6s ease-out;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      }
+      h1 {
+        font-size: 3em;
+        margin-bottom: 0.2em;
+      }
+      p {
+        font-size: 1.2em;
+        margin-top: 0;
+      }
+      @keyframes pop {
+        0% { transform: scale(0.8); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .emoji {
+        font-size: 4em;
+        margin-bottom: 20px;
+        animation: bounce 1.5s infinite;
+      }
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="success-box">
+      <div class="emoji">🎉</div>
+      <h1>Payment Successful!</h1>
+      <p>Thank you! Your transaction was completed successfully.</p>
+      <p>🚀 Get ready for greatness!</p>
+    </div>
+  </body>
+  </html>
+`;
