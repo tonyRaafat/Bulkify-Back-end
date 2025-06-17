@@ -2,7 +2,7 @@ import { CustomerPurchase } from "../../../database/models/customerPurchase.mode
 import { Product } from "../../../database/models/product.model.js";
 import Purchase from "../../../database/models/purchase.model.js";
 import Stripe from "stripe";
-
+import { paymentSuccessHtml } from "../../constants/constants.js";
 const haversineDistance = (coords1, coords2) => {
   const toRad = (value) => (value * Math.PI) / 180;
   const R = 6371; // Earth's radius in km
@@ -80,7 +80,6 @@ import path from "path";
 import { payment } from "../../services/payment.js";
 import { Customer } from "../../../database/models/customer.model.js";
 import { sendEmail } from "../../utils/emailService.js";
-import { paymentSuccessHtml } from "../../constants/constants.js";
 
 export const startPurchase = async (req, res, next) => {
   try {
@@ -238,7 +237,7 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
     });
 
     // 8. Send Success Response
-    return res.send(paymentSuccessHtml  );
+    return res.send(paymentSuccessHtml);
   } catch (error) {
     next(error);
   }

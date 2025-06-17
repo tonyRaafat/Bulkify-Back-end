@@ -38,57 +38,105 @@ export const CUSTOMER_PURCHASE_STATUS = {
 
 // Payment Status
 export const paymentSuccessHtml = `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Payment Successful</title>
-    <style>
-      body {
-        background: linear-gradient(to right, #00c6ff, #0072ff);
-        color: white;
-        text-align: center;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        padding-top: 100px;
-      }
-      .success-box {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 40px;
-        display: inline-block;
-        animation: pop 0.6s ease-out;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      }
-      h1 {
-        font-size: 3em;
-        margin-bottom: 0.2em;
-      }
-      p {
-        font-size: 1.2em;
-        margin-top: 0;
-      }
-      @keyframes pop {
-        0% { transform: scale(0.8); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
-      }
-      .emoji {
-        font-size: 4em;
-        margin-bottom: 20px;
-        animation: bounce 1.5s infinite;
-      }
-      @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-20px); }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="success-box">
-      <div class="emoji">🎉</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulkify - Payment Success</title>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f5f5;
+      text-align: center;
+    }
+
+    header {
+      background-color: #4CAF50;
+      padding: 20px;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .logo {
+      font-size: 2rem;
+      color: white;
+    }
+
+    .content {
+      margin-top: 100px;
+    }
+
+    .card {
+      background-color: white;
+      margin: auto;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      display: inline-block;
+    }
+
+    .success-icon {
+      font-size: 80px;
+      color: #4CAF50;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: #555;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 14px 30px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: #43a047;
+    }
+
+    footer {
+      margin-top: 100px;
+      color: #888;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="logo">bulkify</span> - Payment Success
+  </header>
+
+  <div class="content">
+    <div class="card">
+      <div class="success-icon">✅</div>
       <h1>Payment Successful!</h1>
-      <p>Thank you! Your transaction was completed successfully.</p>
-      <p>🚀 Get ready for greatness!</p>
+      <p>Your transaction has been completed successfully.<br>Thank you for being part of the community purchase!</p>
+      <a class="btn" href="https://bulkify-web.netlify.app/">Back to Dashboard</a>
     </div>
-  </body>
-  </html>
+  </div>
+
+  <footer>
+    &copy; ${new Date().getFullYear()} bulkify. All rights reserved.
+  </footer>
+
+</body>
+</html>
 `;
