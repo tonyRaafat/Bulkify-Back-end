@@ -1,11 +1,9 @@
-import { CustomerPurchase } from '../../../database/models/customerPurchase.model.js'
-import { Product } from '../../../database/models/product.model.js'
-import Purchase from '../../../database/models/purchase.model.js'
+import { CustomerPurchase } from "../../../database/models/customerPurchase.model.js";
+import { Product } from "../../../database/models/product.model.js";
+import Purchase from "../../../database/models/purchase.model.js";
 import Stripe from "stripe";
 
 const haversineDistance = (coords1, coords2) => {
-
-
   const toRad = (value) => (value * Math.PI) / 180;
   const R = 6371; // Earth's radius in km
 
@@ -29,7 +27,9 @@ export const generateInvoiceHTML = (invoice) => {
       
       <div style="margin-bottom: 20px;">
         <p><strong>Name:</strong> ${invoice.name}</p>
-        <p><strong>Address:</strong> ${invoice.street}, ${invoice.city}, Home No. ${invoice.homeNumber}</p>
+        <p><strong>Address:</strong> ${invoice.street}, ${
+    invoice.city
+  }, Home No. ${invoice.homeNumber}</p>
       </div>
       
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -43,15 +43,29 @@ export const generateInvoiceHTML = (invoice) => {
           </tr>
         </thead>
         <tbody>
-          ${invoice.items.map(item => `
+          ${invoice.items
+            .map(
+              (item) => `
             <tr>
-              <td style="border: 1px solid #ccc; padding: 10px;">${item.title}</td>
-              <td style="border: 1px solid #ccc; padding: 10px;">${item.description}</td>
-              <td style="border: 1px solid #ccc; padding: 10px;">$${item.price.toFixed(2)}</td>
-              <td style="border: 1px solid #ccc; padding: 10px;">${item.quantity}</td>
-              <td style="border: 1px solid #ccc; padding: 10px;">$${(item.price * item.quantity).toFixed(2)}</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">${
+                item.title
+              }</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">${
+                item.description
+              }</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">$${item.price.toFixed(
+                2
+              )}</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">${
+                item.quantity
+              }</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">$${(
+                item.price * item.quantity
+              ).toFixed(2)}</td>
             </tr>
-          `).join('')}
+          `
+            )
+            .join("")}
         </tbody>
       </table>
 
@@ -62,13 +76,10 @@ export const generateInvoiceHTML = (invoice) => {
   `;
 };
 
-
 import path from "path";
-import { payment } from '../../services/payment.js';
-import { Customer } from '../../../database/models/customer.model.js';
-import { sendEmail } from '../../utils/emailService.js';
-
-
+import { payment } from "../../services/payment.js";
+import { Customer } from "../../../database/models/customer.model.js";
+import { sendEmail } from "../../utils/emailService.js";
 
 export const startPurchase = async (req, res, next) => {
   try {
@@ -87,14 +98,21 @@ export const startPurchase = async (req, res, next) => {
 
     // Validate purchase quantity
     if (purchaseQuantity > product.bulkThreshold) {
-      return res.status(400).json({ message: "You cannot purchase more than the allowed limit" });
+      return res
+        .status(400)
+        .json({ message: "You cannot purchase more than the allowed limit" });
     }
 
     // Check other nearby purchases within 2km
     const purchases = await Purchase.find({ productId });
     for (let purchase of purchases) {
-      if (haversineDistance(userLocation, purchase.userLocation) <= 2 && purchase.status != "Waiting Payment") {
-        return res.status(403).json({ message: "Another purchase is in progress within 2km" });
+      if (
+        haversineDistance(userLocation, purchase.userLocation) <= 2 &&
+        purchase.status != "Waiting Payment"
+      ) {
+        return res
+          .status(403)
+          .json({ message: "Another purchase is in progress within 2km" });
       }
     }
 
@@ -105,7 +123,7 @@ export const startPurchase = async (req, res, next) => {
       quantity: product.bulkThreshold,
       status: "Waiting Payment",
       productId,
-      userLocation
+      userLocation,
     });
 
     // Create customer purchase
@@ -115,7 +133,7 @@ export const startPurchase = async (req, res, next) => {
       productId,
       purchaseQuantity,
       status: "Waiting payment",
-      paymentMethod: "Credit Card"
+      paymentMethod: "Credit Card",
     });
 
     // Create Stripe session
@@ -126,14 +144,16 @@ export const startPurchase = async (req, res, next) => {
       metadata: { purchaseId: newPurchase._id.toString() },
       success_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/successPayment/${newPurchase._id}/${req.user._id}`,
       cancel_url: `https://bulkify-web.netlify.app/`,
-      line_items: [{
-        price_data: {
-          currency: "egp",
-          product_data: { name: product.name },
-          unit_amount: Math.round(product.price * 100)
+      line_items: [
+        {
+          price_data: {
+            currency: "egp",
+            product_data: { name: product.name },
+            unit_amount: Math.round(product.price * 100),
+          },
+          quantity: purchaseQuantity,
         },
-        quantity: purchaseQuantity
-      }],
+      ],
     });
 
     // Respond with Stripe URL
@@ -143,14 +163,12 @@ export const startPurchase = async (req, res, next) => {
       data: {
         purchaseId: newPurchase._id,
         productName: product.name,
-      }
+      },
     });
-
   } catch (error) {
     next(error);
   }
 };
-
 
 export const successPaymentForStartPurchase = async (req, res, next) => {
   try {
@@ -181,7 +199,7 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
     // 5. Get Customer Purchase Info to Generate Invoice
     const customerPurchase = await CustomerPurchase.findOne({
       purchaseId: purchaseId,
-      customerId: userId
+      customerId: userId,
     }).populate("productId");
 
     if (!customerPurchase) {
@@ -194,75 +212,81 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
 
     const invoice = {
       name: `${user.firstName} ${user.lastName}`,
-      items: [{
-        title: product.name,
-        price: product.price,
-        quantity: customerPurchase.purchaseQuantity,
-        finalPrice: product.price,
-        description: product.description,
-      }],
+      items: [
+        {
+          title: product.name,
+          price: product.price,
+          quantity: customerPurchase.purchaseQuantity,
+          finalPrice: product.price,
+          description: product.description,
+        },
+      ],
       totalPrice: product.price * customerPurchase.purchaseQuantity,
       paid: product.price * customerPurchase.purchaseQuantity,
       city: user.city,
       street: user.street,
-      homeNumber: user.homeNumber
+      homeNumber: user.homeNumber,
     };
 
     const invoiceHTML = generateInvoiceHTML(invoice);
 
     // 7. Send Email
-    await sendEmail(
-      user.email,
-      "Your Invoice",
-      {
-        text: "Thank you for your purchase! You can find your invoice below.",
-        html: invoiceHTML
-      }
-    );
-
+    await sendEmail(user.email, "Your Invoice", {
+      text: "Thank you for your purchase! You can find your invoice below.",
+      html: invoiceHTML,
+    });
 
     // 8. Send Success Response
-    return res.redirect('https://bulkify-web.netlify.app/?message=Payment%20success');
-
-
+    return res.send(`
+  <html>
+    <head><title>Payment Success</title></head>
+    <body style="text-align:center; font-family:sans-serif; padding-top:50px;">
+      <h1>✅ Payment Successful</h1>
+      <p>Thank you for your purchase.</p>
+    </body>
+  </html>
+`);
   } catch (error) {
     next(error);
   }
 };
 
-
 export const VoteForPurchase = async (req, res, next) => {
   try {
-    const { productId, purchaseId } = req.params
-    const { purchaseQuantity, deliveryAddress } = req.body
-    let userLocation = req.user.coordinates
-    const product = await Product.findById(productId)
+    const { productId, purchaseId } = req.params;
+    const { purchaseQuantity, deliveryAddress } = req.body;
+    let userLocation = req.user.coordinates;
+    const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ message: "Product not found" })
+      return res.status(404).json({ message: "Product not found" });
     }
 
-    const purchase = await Purchase.findById(purchaseId)
+    const purchase = await Purchase.findById(purchaseId);
     if (!purchase) {
-      return res.status(404).json({ message: "Purchase not found" })
+      return res.status(404).json({ message: "Purchase not found" });
     }
     if (!userLocation || !userLocation || userLocation.length !== 2) {
-      return res.status(400).json({ message: "Invalid user location" })
+      return res.status(400).json({ message: "Invalid user location" });
     }
-    const userCoordinates = userLocation
-    const purchaseCoordinates = purchase.userLocation
+    const userCoordinates = userLocation;
+    const purchaseCoordinates = purchase.userLocation;
 
     // Check if user is within 5km of the purchase location
     if (haversineDistance(userCoordinates, purchaseCoordinates) > 2) {
-      return res.status(403).json({ message: "You are too far from the required area. Please get closer to vote. Or start new one" })
+      return res.status(403).json({
+        message:
+          "You are too far from the required area. Please get closer to vote. Or start new one",
+      });
     }
-    const pendingCount = await CustomerPurchase.countDocuments({ status: "Pending", purchaseId })
+    const pendingCount = await CustomerPurchase.countDocuments({
+      status: "Pending",
+      purchaseId,
+    });
 
     if (purchaseQuantity + pendingCount == purchase.quantity) {
       // add here API of comlete the purchase
-
-    }
-    else if (purchaseQuantity + pendingCount > purchase.quantity) {
-      return res.status(400).json({ message: "The Quantity more than valid" })
+    } else if (purchaseQuantity + pendingCount > purchase.quantity) {
+      return res.status(400).json({ message: "The Quantity more than valid" });
     }
 
     await CustomerPurchase.create({
@@ -271,8 +295,8 @@ export const VoteForPurchase = async (req, res, next) => {
       productId,
       purchaseQuantity,
       status: "Waiting payment",
-      paymentMethod: "Credit Card"
-    })
+      paymentMethod: "Credit Card",
+    });
 
     // Create Stripe session
     const session = await payment({
@@ -282,14 +306,16 @@ export const VoteForPurchase = async (req, res, next) => {
       metadata: { purchaseId: purchase._id.toString() },
       success_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/vote/successPayment/${purchase._id}/${req.user._id}`,
       cancel_url: `https://bulkify-web.netlify.app/`,
-      line_items: [{
-        price_data: {
-          currency: "egp",
-          product_data: { name: product.name },
-          unit_amount: Math.round(product.price * 100)
+      line_items: [
+        {
+          price_data: {
+            currency: "egp",
+            product_data: { name: product.name },
+            unit_amount: Math.round(product.price * 100),
+          },
+          quantity: purchaseQuantity,
         },
-        quantity: purchaseQuantity
-      }],
+      ],
     });
 
     // Respond with Stripe URL
@@ -299,13 +325,12 @@ export const VoteForPurchase = async (req, res, next) => {
       data: {
         purchaseId: purchase._id,
         productName: product.name,
-      }
+      },
     });
-
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 export const successPaymentForVoting = async (req, res, next) => {
   try {
@@ -332,7 +357,7 @@ export const successPaymentForVoting = async (req, res, next) => {
     // 5. Get Customer Purchase Info to Generate Invoice
     const customerPurchase = await CustomerPurchase.findOne({
       purchaseId: purchaseId,
-      customerId: userId
+      customerId: userId,
     }).populate("productId");
 
     if (!customerPurchase) {
@@ -346,35 +371,39 @@ export const successPaymentForVoting = async (req, res, next) => {
 
     const invoice = {
       name: `${user.firstName} ${user.lastName}`,
-      items: [{
-        title: product.name,
-        price: product.price,
-        quantity: customerPurchase.purchaseQuantity,
-        finalPrice: product.price,
-        description: product.description,
-      }],
+      items: [
+        {
+          title: product.name,
+          price: product.price,
+          quantity: customerPurchase.purchaseQuantity,
+          finalPrice: product.price,
+          description: product.description,
+        },
+      ],
       totalPrice: product.price * customerPurchase.purchaseQuantity,
       paid: product.price * customerPurchase.purchaseQuantity,
       city: user.city,
       street: user.street,
-      homeNumber: user.homeNumber
+      homeNumber: user.homeNumber,
     };
 
     const invoiceHTML = generateInvoiceHTML(invoice);
 
     // 7. Send Email
-    await sendEmail(
-      user.email,
-      "Your Invoice",
-      {
-        text: "Thank you for your purchase! You can find your invoice below.",
-        html: invoiceHTML
-      }
-    );
+    await sendEmail(user.email, "Your Invoice", {
+      text: "Thank you for your purchase! You can find your invoice below.",
+      html: invoiceHTML,
+    });
     // 8. Send Success Response
-    return res.redirect('https://bulkify-web.netlify.app/?message=Payment%20success');
-
-
+    return res.send(`
+  <html>
+    <head><title>Payment Success</title></head>
+    <body style="text-align:center; font-family:sans-serif; padding-top:50px;">
+      <h1>✅ Payment Successful</h1>
+      <p>Thank you for your purchase.</p>
+    </body>
+  </html>
+`);
   } catch (error) {
     next(error);
   }
@@ -382,19 +411,23 @@ export const successPaymentForVoting = async (req, res, next) => {
 
 export const webhook = async (req, res) => {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const sig = req.headers['stripe-signature'];
+  const sig = req.headers["stripe-signature"];
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.SIGNING_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.SIGNING_SECRET
+    );
   } catch (err) {
-    console.error('Webhook signature verification failed.', err.message);
-    return res.status(400).send('Webhook Error');
+    console.error("Webhook signature verification failed.", err.message);
+    return res.status(400).send("Webhook Error");
   }
 
   const { purchaseId } = event.data.object.metadata;
 
-  if (event.type === 'checkout.session.completed') {
+  if (event.type === "checkout.session.completed") {
     // await Purchase.findOneAndUpdate({ _id: purchaseId }, { status: "placed" });
     // await CustomerPurchase.updateMany({ purchaseId }, { status: "Pending" });
     return res.status(200).json({ msg: "done" });
