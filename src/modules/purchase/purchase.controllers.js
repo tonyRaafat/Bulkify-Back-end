@@ -125,7 +125,7 @@ export const startPurchase = async (req, res, next) => {
       customer_email: req.user.email,
       metadata: { purchaseId: newPurchase._id.toString() },
       success_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/successPayment/${newPurchase._id}/${req.user._id}`,
-      cancel_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/startPurchase/cancel/${newPurchase._id}`,
+      cancel_url: `https://bulkify-web.netlify.app/`,
       line_items: [{
         price_data: {
           currency: "egp",
@@ -282,7 +282,7 @@ export const VoteForPurchase = async (req, res, next) => {
       customer_email: req.user.email,
       metadata: { purchaseId: purchase._id.toString() },
       success_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/vote/successPayment/${purchase._id}/${req.user._id}`,
-      cancel_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/vote/startPurchase/cancel/${purchase._id}`,
+      cancel_url: `https://bulkify-web.netlify.app/`,
       line_items: [{
         price_data: {
           currency: "egp",
