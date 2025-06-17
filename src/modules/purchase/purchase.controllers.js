@@ -80,6 +80,7 @@ import path from "path";
 import { payment } from "../../services/payment.js";
 import { Customer } from "../../../database/models/customer.model.js";
 import { sendEmail } from "../../utils/emailService.js";
+import { paymentSuccessHtml } from "../../constants/constants.js";
 
 export const startPurchase = async (req, res, next) => {
   try {
@@ -237,15 +238,7 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
     });
 
     // 8. Send Success Response
-    return res.send(`
-  <html>
-    <head><title>Payment Success</title></head>
-    <body style="text-align:center; font-family:sans-serif; padding-top:50px;">
-      <h1>✅ Payment Successful</h1>
-      <p>Thank you for your purchase.</p>
-    </body>
-  </html>
-`);
+    return res.send(paymentSuccessHtml  );
   } catch (error) {
     next(error);
   }
@@ -395,15 +388,7 @@ export const successPaymentForVoting = async (req, res, next) => {
       html: invoiceHTML,
     });
     // 8. Send Success Response
-    return res.send(`
-  <html>
-    <head><title>Payment Success</title></head>
-    <body style="text-align:center; font-family:sans-serif; padding-top:50px;">
-      <h1>✅ Payment Successful</h1>
-      <p>Thank you for your purchase.</p>
-    </body>
-  </html>
-`);
+    return res.send(paymentSuccessHtml);
   } catch (error) {
     next(error);
   }
