@@ -277,7 +277,7 @@ export const VoteForPurchase = async (req, res, next) => {
       return res.status(400).json({ message: "The Quantity more than valid" });
     }
 
-    const customerPurchaseId = await CustomerPurchase.create({
+    const customerPurchase = await CustomerPurchase.create({
       purchaseId,
       customerId: req.user._id,
       productId,
@@ -292,7 +292,7 @@ export const VoteForPurchase = async (req, res, next) => {
       mode: "payment",
       customer_email: req.user.email,
       metadata: { purchaseId: purchase._id.toString() },
-      success_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/vote/successPayment/${purchase._id}/${req.user._id}/${customerPurchaseId}`,
+      success_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/vote/successPayment/${purchase._id}/${req.user._id}/${customerPurchase._id}`,
       cancel_url: `https://bulkify-web.netlify.app/`,
       line_items: [
         {
