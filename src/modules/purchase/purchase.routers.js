@@ -182,7 +182,7 @@ purchaseRouter.post('/:purchaseId/vote',
  *       404:
  *         description: Purchase, product, or user not found
  */
-purchaseRouter.get('/successPayment/:purchaseId/:userId/:customerPurchaseId',
+purchaseRouter.get('/successPayment/:purchaseId/:userId',
   PC.successPaymentForStartPurchase
 )
 
@@ -227,7 +227,7 @@ purchaseRouter.get('/successPayment/:purchaseId/:userId/:customerPurchaseId',
  *       404:
  *         description: Purchase, product, or user not found
  */
-purchaseRouter.get('/vote/successPayment/:purchaseId/:userId',
+purchaseRouter.get('/vote/successPayment/:purchaseId/:userId/:customerPurchaseId',
   PC.successPaymentForVoting
 )
 
