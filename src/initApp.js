@@ -6,12 +6,12 @@ import { dbConnection } from "../database/dbConnection.js";
 import { setupSwagger } from "./utils/swagger.js";
 
 // Import routers
-// import customerRouter from "./modules/customers/customers.routers.js";
-// import categoryRouter from "./modules/category/categories.routers.js";
-// import supplierRouter from "./modules/supplier/supplier.routers.js";
-// import productRouter from "./modules/product/products.routers.js";
-// import adminRouter from "./modules/admin/admin.routers.js";
-// import purchaseRouter from "./modules/purchase/purchase.routers.js";
+import customerRouter from "./modules/customers/customers.routers.js";
+import categoryRouter from "./modules/category/categories.routers.js";
+import supplierRouter from "./modules/supplier/supplier.routers.js";
+import productRouter from "./modules/product/products.routers.js";
+import adminRouter from "./modules/admin/admin.routers.js";
+import purchaseRouter from "./modules/purchase/purchase.routers.js";
 
 export const initApp = (app) => {
   dotenv.config();
