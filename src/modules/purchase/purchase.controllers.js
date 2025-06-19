@@ -512,12 +512,12 @@ export const cancelPurchase = async (req, res, next) => {
     // 8. Return success response
     res.status(200).json({
       message: "Purchase cancelled successfully",
-      refundStatus: customerPurchase.status === "Pending" ? "Refund processing" : "No payment to refund",
+      refundStatus: customerPurchase.status === CUSTOMER_PURCHASE_STATUS.PENDING ? "Refund processing" : "No payment to refund",
       data: {
         customerPurchaseId: customerPurchase._id,
         productName: product.name,
         quantity: customerPurchase.purchaseQuantity,
-        refundAmount: customerPurchase.status === "Pending" ? 
+        refundAmount: customerPurchase.status === CUSTOMER_PURCHASE_STATUS.PENDING ? 
           (product.price * customerPurchase.purchaseQuantity) : 0,
         cancellationDate: customerPurchase.cancelledAt
       }
