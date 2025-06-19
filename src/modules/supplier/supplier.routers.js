@@ -409,5 +409,12 @@ router.delete(
   authorize({ supplier: ["verified"] }),
   supplierController.deleteAccount
 );
+router.get(
+  "/allLivePurchases",
+  auth(["supplier"]),
+  authorize({ supplier: ["verified"] }),
+  supplierController.allLivePurchases
+);
+
 
 export default router;
