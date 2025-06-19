@@ -27,9 +27,8 @@ export const generateInvoiceHTML = (invoice) => {
       
       <div style="margin-bottom: 20px;">
         <p><strong>Name:</strong> ${invoice.name}</p>
-        <p><strong>Address:</strong> ${invoice.street}, ${
-    invoice.city
-  }, Home No. ${invoice.homeNumber}</p>
+        <p><strong>Address:</strong> ${invoice.street}, ${invoice.city
+    }, Home No. ${invoice.homeNumber}</p>
       </div>
       
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -44,28 +43,25 @@ export const generateInvoiceHTML = (invoice) => {
         </thead>
         <tbody>
           ${invoice.items
-            .map(
-              (item) => `
+      .map(
+        (item) => `
             <tr>
-              <td style="border: 1px solid #ccc; padding: 10px;">${
-                item.title
-              }</td>
-              <td style="border: 1px solid #ccc; padding: 10px;">${
-                item.description
-              }</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">${item.title
+          }</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">${item.description
+          }</td>
               <td style="border: 1px solid #ccc; padding: 10px;">$${item.price.toFixed(
-                2
-              )}</td>
-              <td style="border: 1px solid #ccc; padding: 10px;">${
-                item.quantity
-              }</td>
+            2
+          )}</td>
+              <td style="border: 1px solid #ccc; padding: 10px;">${item.quantity
+          }</td>
               <td style="border: 1px solid #ccc; padding: 10px;">$${(
-                item.price * item.quantity
-              ).toFixed(2)}</td>
+            item.price * item.quantity
+          ).toFixed(2)}</td>
             </tr>
           `
-            )
-            .join("")}
+      )
+      .join("")}
         </tbody>
       </table>
 
@@ -281,7 +277,7 @@ export const VoteForPurchase = async (req, res, next) => {
       return res.status(400).json({ message: "The Quantity more than valid" });
     }
 
-    await CustomerPurchase.create({
+    const customerPurchase = await CustomerPurchase.create({
       purchaseId,
       customerId: req.user._id,
       productId,
@@ -296,7 +292,7 @@ export const VoteForPurchase = async (req, res, next) => {
       mode: "payment",
       customer_email: req.user.email,
       metadata: { purchaseId: purchase._id.toString() },
-      success_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/vote/successPayment/${purchase._id}/${req.user._id}`,
+      success_url: `https://bulkify-back-end.vercel.app/api/v1/purchases/vote/successPayment/${purchase._id}/${req.user._id}/${customerPurchase._id}`,
       cancel_url: `https://bulkify-web.netlify.app/`,
       line_items: [
         {
@@ -326,7 +322,7 @@ export const VoteForPurchase = async (req, res, next) => {
 
 export const successPaymentForVoting = async (req, res, next) => {
   try {
-    const { purchaseId, userId } = req.params;
+    const { purchaseId, userId, customerPurchaseId } = req.params;
 
     // 1. Find the purchase
     const purchase = await Purchase.findById(purchaseId);
@@ -341,24 +337,21 @@ export const successPaymentForVoting = async (req, res, next) => {
     }
 
     // 4. Update CustomerPurchase status
-    await CustomerPurchase.updateOne(
-      { purchaseId: purchaseId, customerId: userId },
-      { status: "Pending" }
+    await CustomerPurchase.findByIdAndUpdate(
+      customerPurchaseId,
+      { status: "Pending" },
+      { new: true } // Optional: returns the updated document
     );
 
+
     // 5. Get Customer Purchase Info to Generate Invoice
-    const customerPurchase = await CustomerPurchase.findOne({
-      purchaseId: purchaseId,
-      customerId: userId,
-    }).populate("productId");
+    const customerPurchase = await CustomerPurchase.findById(customerPurchaseId).populate("productId");
 
     if (!customerPurchase) {
       return next(new appError("Customer Purchase not found", 404));
     }
 
     const product = customerPurchase.productId;
-    // 6. create invoice
-
     // 6. Create Invoice
 
     const invoice = {

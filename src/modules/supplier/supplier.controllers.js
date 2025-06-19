@@ -4,6 +4,8 @@ import { Supplier } from "../../../database/models/supplier.model.js";
 import { throwError } from "../../utils/throwerror.js";
 import { sendEmail, sendVerificationEmail } from "../../utils/emailService.js";
 import { deleteSupplierProducts } from "../product/products.controllers.js";
+import { Product } from "../../../database/models/product.model.js";
+import Purchase from "../../../database/models/purchase.model.js";
 
 const BASE_URL = "https://bulkify-back-end.vercel.app";
 
@@ -350,7 +352,7 @@ export const deleteAccount = async (req, res, next) => {
   try {
     // First delete all products by this supplier
     await deleteSupplierProducts(req.user._id);
-    
+
     // Then delete the supplier
     const supplier = await Supplier.findByIdAndDelete(req.user._id);
 
@@ -365,4 +367,21 @@ export const deleteAccount = async (req, res, next) => {
     next(error);
   }
 };
+export const allLivePurchases = async (req, res, next) => {
+  try {
+    const products = await Product.find({ supplierId: req.user._id });
 
+    const productIds = products.map(product => product._id);
+
+    const livePurchases = await Purchase.find({ productId: { $in: productIds }, status: "Started" });
+
+    return res.status(200).json({
+      message: "Live purchases fetched successfully",
+      total: livePurchases.length,
+      livePurchases
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
