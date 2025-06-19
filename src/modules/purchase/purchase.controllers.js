@@ -2,7 +2,7 @@ import { CustomerPurchase } from "../../../database/models/customerPurchase.mode
 import { Product } from "../../../database/models/product.model.js";
 import Purchase from "../../../database/models/purchase.model.js";
 import Stripe from "stripe";
-import { paymentSuccessHtml } from "../../constants/constants.js";
+import { CUSTOMER_PURCHASE_STATUS, paymentSuccessHtml } from "../../constants/constants.js";
 import { refundPayment, getPaymentIntent } from "../../services/payment.js";
 
 const haversineDistance = (coords1, coords2) => {
@@ -407,19 +407,19 @@ export const cancelPurchase = async (req, res, next) => {
     }
 
     // 2. Check if purchase can be cancelled
-    if (customerPurchase.status === "Cancelled") {
+    if (customerPurchase.status === CUSTOMER_PURCHASE_STATUS.CANCELLED) {
       return res.status(400).json({ 
         message: "Purchase is already cancelled" 
       });
     }
 
-    if (customerPurchase.status === "Completed") {
+    if (customerPurchase.status === CUSTOMER_PURCHASE_STATUS.COMPLETED) {
       return res.status(400).json({ 
         message: "Cannot cancel a completed purchase" 
       });
     }
 
-    if (customerPurchase.status === "Ended without purchase") {
+    if (customerPurchase.status === CUSTOMER_PURCHASE_STATUS.ENDED_WITHOUT_PURCHASE) {
       return res.status(400).json({ 
         message: "Cannot cancel an expired purchase" 
       });
@@ -457,7 +457,7 @@ export const cancelPurchase = async (req, res, next) => {
     }
 
     // 4. Update customer purchase status
-    customerPurchase.status = "Cancelled";
+    customerPurchase.status = CUSTOMER_PURCHASE_STATUS.CANCELLED;
     customerPurchase.cancellationReason = reason;
     customerPurchase.cancelledAt = new Date();
     await customerPurchase.save();
