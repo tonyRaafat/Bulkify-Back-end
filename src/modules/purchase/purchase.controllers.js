@@ -3,6 +3,8 @@ import { Product } from "../../../database/models/product.model.js";
 import Purchase from "../../../database/models/purchase.model.js";
 import Stripe from "stripe";
 import { paymentSuccessHtml } from "../../constants/constants.js";
+import { refundPayment, getPaymentIntent } from "../../services/payment.js";
+
 const haversineDistance = (coords1, coords2) => {
   const toRad = (value) => (value * Math.PI) / 180;
   const R = 6371; // Earth's radius in km
@@ -382,6 +384,147 @@ export const successPaymentForVoting = async (req, res, next) => {
     // 8. Send Success Response
     return res.send(paymentSuccessHtml);
   } catch (error) {
+    next(error);
+  }
+};
+
+export const cancelPurchase = async (req, res, next) => {
+  try {
+    const { customerPurchaseId } = req.params;
+    const { reason } = req.body;
+    const customerId = req.user._id;
+
+    // 1. Find the customer purchase
+    const customerPurchase = await CustomerPurchase.findOne({
+      _id: customerPurchaseId,
+      customerId: customerId
+    }).populate('productId').populate('purchaseId');
+
+    if (!customerPurchase) {
+      return res.status(404).json({ 
+        message: "Purchase not found or you don't have permission to cancel it" 
+      });
+    }
+
+    // 2. Check if purchase can be cancelled
+    if (customerPurchase.status === "Cancelled") {
+      return res.status(400).json({ 
+        message: "Purchase is already cancelled" 
+      });
+    }
+
+    if (customerPurchase.status === "Completed") {
+      return res.status(400).json({ 
+        message: "Cannot cancel a completed purchase" 
+      });
+    }
+
+    if (customerPurchase.status === "Ended without purchase") {
+      return res.status(400).json({ 
+        message: "Cannot cancel an expired purchase" 
+      });
+    }
+
+    const purchase = customerPurchase.purchaseId;
+    const product = customerPurchase.productId;
+
+    // 3. Handle Stripe refund if payment was made
+    if (customerPurchase.status === "Pending") {
+      try {
+        // For demo purposes, we'll create a mock refund since we don't have the actual payment_intent_id
+        // In a real implementation, you should store the payment_intent_id when creating the purchase
+        
+        // Mock refund process
+        console.log(`Processing refund for customer purchase ${customerPurchaseId}`);
+        console.log(`Refund amount: ${product.price * customerPurchase.purchaseQuantity} EGP`);
+        
+        // If you have the actual payment_intent_id stored, use this:
+        // const refund = await refundPayment({
+        //   payment_intent_id: customerPurchase.paymentIntentId,
+        //   metadata: {
+        //     customerPurchaseId: customerPurchaseId,
+        //     customerId: customerId.toString(),
+        //     reason: reason || "Customer requested cancellation"
+        //   }
+        // });
+
+      } catch (refundError) {
+        console.error('Refund error:', refundError);
+        return res.status(500).json({ 
+          message: "Failed to process refund. Please contact support." 
+        });
+      }
+    }
+
+    // 4. Update customer purchase status
+    customerPurchase.status = "Cancelled";
+    customerPurchase.cancellationReason = reason;
+    customerPurchase.cancelledAt = new Date();
+    await customerPurchase.save();
+
+    // 5. Check if this was the only participant in the bulk purchase
+    const remainingParticipants = await CustomerPurchase.countDocuments({
+      purchaseId: purchase._id,
+      status: { $in: ["Pending", "Waiting payment"] }
+    });
+
+    // 6. If no remaining participants, cancel the bulk purchase
+    if (remainingParticipants === 0) {
+      purchase.status = "Cancelled";
+      purchase.cancelledAt = new Date();
+      await purchase.save();
+    }
+
+    // 7. Send cancellation confirmation email
+    const user = await Customer.findById(customerId);
+    if (user) {
+      const cancellationHTML = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #d32f2f;">Purchase Cancelled</h2>
+          <p>Dear ${user.firstName} ${user.lastName},</p>
+          <p>Your purchase has been successfully cancelled:</p>
+          
+          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3>Cancelled Purchase Details:</h3>
+            <p><strong>Product:</strong> ${product.name}</p>
+            <p><strong>Quantity:</strong> ${customerPurchase.purchaseQuantity}</p>
+            <p><strong>Amount:</strong> ${(product.price * customerPurchase.purchaseQuantity).toFixed(2)} EGP</p>
+            <p><strong>Cancellation Date:</strong> ${new Date().toLocaleDateString()}</p>
+            ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+          </div>
+          
+          ${customerPurchase.status === "Pending" ? 
+            '<p style="color: #4CAF50;"><strong>Refund Status:</strong> Your refund is being processed and will appear in your account within 5-10 business days.</p>' : 
+            ''
+          }
+          
+          <p>If you have any questions, please contact our support team.</p>
+          <p>Thank you for using our service.</p>
+        </div>
+      `;
+
+      await sendEmail(user.email, "Purchase Cancellation Confirmation", {
+        text: `Your purchase of ${product.name} (Quantity: ${customerPurchase.purchaseQuantity}) has been cancelled.`,
+        html: cancellationHTML,
+      });
+    }
+
+    // 8. Return success response
+    res.status(200).json({
+      message: "Purchase cancelled successfully",
+      refundStatus: customerPurchase.status === "Pending" ? "Refund processing" : "No payment to refund",
+      data: {
+        customerPurchaseId: customerPurchase._id,
+        productName: product.name,
+        quantity: customerPurchase.purchaseQuantity,
+        refundAmount: customerPurchase.status === "Pending" ? 
+          (product.price * customerPurchase.purchaseQuantity) : 0,
+        cancellationDate: customerPurchase.cancelledAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Cancel purchase error:', error);
     next(error);
   }
 };

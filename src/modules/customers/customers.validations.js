@@ -235,8 +235,8 @@ export const ordersHistorySchema = {
       "number.min": "Limit must be at least 1",
       "number.max": "Limit cannot exceed 100",
     }),
-    status: Joi.string().valid("Pending", "Completed", "Cancelled", "Waiting payment").messages({
-      "any.only": "Status must be one of: Pending, Completed, Cancelled, Waiting payment",
+    status: Joi.string().valid("Pending", "Completed", "Cancelled", "Waiting payment", "Ended without purchase").messages({
+      "any.only": "Status must be one of: Pending, Completed, Cancelled, Waiting payment, Ended without purchase",
     }),
     sortBy: Joi.string().valid("createdAt", "updatedAt", "purchaseQuantity").default("createdAt").messages({
       "any.only": "Sort by must be one of: createdAt, updatedAt, purchaseQuantity",

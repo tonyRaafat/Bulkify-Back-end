@@ -73,5 +73,13 @@ router.get(
   customerController.getOrdersHistory
 );
 
+router.get(
+  "/cancelled-orders",
+  auth(["customer"]),
+  authorize({ customer: ["all"] }),
+  validate(ordersHistorySchema),
+  customerController.getCancelledOrders
+);
+
 export default router;
 

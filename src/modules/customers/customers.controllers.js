@@ -547,3 +547,108 @@ export const getOrdersHistory = async (req, res, next) => {
   }
 };
 
+export const getCancelledOrders = async (req, res, next) => {
+  try {
+    const customerId = req.user._id;
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "cancelledAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    // Build filter for cancelled orders only
+    const filter = {
+      customerId,
+      status: "Cancelled",
+    };
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get cancelled orders with populated product details
+    const cancelledOrders = await CustomerPurchase.find(filter)
+      .populate({
+        path: "productId",
+        select: "name price imageSource categoryId supplierId",
+        populate: [
+          {
+            path: "categoryId",
+            select: "name",
+            model: "Category",
+          },
+          {
+            path: "supplierId",
+            select: "businessName",
+            model: "Supplier",
+          },
+        ],
+      })
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Get total count for pagination
+    const totalCancelledOrders = await CustomerPurchase.countDocuments(filter);
+    const totalPages = Math.ceil(totalCancelledOrders / parseInt(limit));
+
+    // Transform the data for better response structure
+    const transformedOrders = cancelledOrders.map((order) => ({
+      _id: order._id,
+      purchaseQuantity: order.purchaseQuantity,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      cancellationReason: order.cancellationReason,
+      cancelledAt: order.cancelledAt,
+      createdAt: order.createdAt,
+      refundAmount: order.productId
+        ? order.productId.price * order.purchaseQuantity
+        : 0,
+      product: order.productId
+        ? {
+            _id: order.productId._id,
+            name: order.productId.name,
+            price: order.productId.price,
+            imageSource: order.productId.imageSource,
+            category: order.productId.categoryId
+              ? {
+                  name: order.productId.categoryId.name,
+                }
+              : null,
+            supplier: order.productId.supplierId
+              ? {
+                  businessName: order.productId.supplierId.businessName,
+                }
+              : null,
+          }
+        : null,
+    }));
+
+    // Pagination info
+    const pagination = {
+      currentPage: parseInt(page),
+      totalPages,
+      totalCancelledOrders,
+      hasNextPage: parseInt(page) < totalPages,
+      hasPrevPage: parseInt(page) > 1,
+      limit: parseInt(limit),
+    };
+
+    res.status(200).json({
+      success: true,
+      message: "Cancelled orders retrieved successfully",
+      data: {
+        cancelledOrders: transformedOrders,
+        pagination,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

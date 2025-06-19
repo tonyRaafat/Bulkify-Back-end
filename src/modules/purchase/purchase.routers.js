@@ -30,6 +30,11 @@ purchaseRouter.get('/vote/successPayment/:purchaseId/:userId',
 purchaseRouter.post('/webhook', express.raw({ type: 'application/json' }), PC.webhook);
 
 // cancel order
+purchaseRouter.delete('/:customerPurchaseId/cancel',
+  auth(["customer"]),
+  validate(PV.cancelPurchaseValidation),
+  PC.cancelPurchase
+);
 
 export default purchaseRouter;
 

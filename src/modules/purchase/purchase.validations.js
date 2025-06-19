@@ -65,3 +65,18 @@ export const voteForPurchaseValidation = {
   })
 };
 
+export const cancelPurchaseValidation = {
+  params: Joi.object({
+    customerPurchaseId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().messages({
+      "string.pattern.base": "Invalid customer purchase ID format",
+      "any.required": "Customer purchase ID is required"
+    })
+  }),
+  body: Joi.object({
+    reason: Joi.string().min(10).max(500).optional().messages({
+      "string.min": "Cancellation reason must be at least 10 characters",
+      "string.max": "Cancellation reason cannot exceed 500 characters"
+    })
+  })
+};
+
