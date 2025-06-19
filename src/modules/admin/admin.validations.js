@@ -60,3 +60,4 @@ export const updateAdminSchema = {
   }),
   headers: generalField.headers,
 };
+

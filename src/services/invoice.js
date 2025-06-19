@@ -16,7 +16,6 @@ export function createInvoice(invoice) {
   return tempPath; // Return the path to use it later
 }
 
-
 import path from "path";
 
 function generateHeader(doc) {
@@ -31,7 +30,6 @@ function generateHeader(doc) {
     .text("Cairo, Egypt", 200, 80, { align: "right" })
     .moveDown();
 }
-
 
 function generateCustomerInformation(doc, invoice) {
   doc
@@ -130,10 +128,10 @@ function formatCurrency(value) {
   return "$" + value.toFixed(2);
 }
 
-
 function formatDate(date) {
   const day = date.getDate();
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
   return `${year}/${month}/${day}`;
 }
+

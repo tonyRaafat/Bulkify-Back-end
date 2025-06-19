@@ -84,3 +84,4 @@ export const deleteRatingSchema = {
   }),
   headers: generalField.headers,
 };
+

@@ -20,3 +20,4 @@ export function throwError(errorInfo, statusCode = 400) {
 
   return error;
 }
+

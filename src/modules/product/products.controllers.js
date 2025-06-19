@@ -47,9 +47,7 @@ const updateExpiredPurchases = async () => {
   }
 };
 
-
 const haversineDistance = (coords1, coords2) => {
-
 
   const toRad = (value) => (value * Math.PI) / 180;
   const R = 6371; // Earth's radius in km
@@ -67,73 +65,6 @@ const haversineDistance = (coords1, coords2) => {
   return R * c; // Distance in km
 };
 
-
-/**
- * @swagger
- * /products:
- *   post:
- *     summary: Create a new product
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - description
- *               - price
- *               - quantity
- *               - bulkThreshold
- *               - categoryId
- *               - images
- *             properties:
- *               name:
- *                 type: string
- *                 description: Product name
- *               description:
- *                 type: string
- *                 description: Product description
- *               price:
- *                 type: number
- *                 description: Product price
- *               quantity:
- *                 type: number
- *                 description: Available quantity
- *               bulkThreshold:
- *                 type: number
- *                 description: Minimum quantity required for bulk purchase
- *               categoryId:
- *                 type: string
- *                 description: Product category ID
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *                 description: Product images (maximum 5)
- *     responses:
- *       201:
- *         description: Product created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 product:
- *                   $ref: '#/components/schemas/Product'
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       409:
- *         description: Product already exists
- */
 export const createProduct = async (req, res, next) => {
   try {
     const { name, description, price, quantity, bulkThreshold, categoryId } =
@@ -192,62 +123,6 @@ export const createProduct = async (req, res, next) => {
   }
 };
 
-/**
- * @swagger
- * /products/{id}:
- *   put:
- *     summary: Update an existing product
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Product ID
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               quantity:
- *                 type: number
- *               bulkThreshold:
- *                 type: number
- *               categoryId:
- *                 type: string
- *               image:
- *                 type: string
- *                 format: binary
- *     responses:
- *       200:
- *         description: Product updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 product:
- *                   $ref: '#/components/schemas/Product'
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Product not found
- */
 export const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -318,66 +193,6 @@ export const updateProduct = async (req, res, next) => {
   }
 };
 
-/** * @swagger
- * /products:
- *   get:
- *     summary: Get all products (Admin and Supplier only)
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Page number for pagination
- *       - in: query
- *         name: sort
- *         schema:
- *           type: string
- *         description: Sort field and order (e.g., price,-createdAt)
- *       - in: query
- *         name: minPrice
- *         schema:
- *           type: number
- *         description: Minimum price filter
- *       - in: query
- *         name: maxPrice
- *         schema:
- *           type: number
- *         description: Maximum price filter
- *       - in: query
- *         name: category
- *         schema:
- *           type: string
- *         description: Filter by category ID
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Search term for product name
- *     responses:
- *       200:
- *         description: List of products retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 currentPage:
- *                   type: integer
- *                 totalPages:
- *                   type: integer
- *                 total:
- *                   type: integer
- *                 products:
- *                   type: array
- *                   description: List of products
- *                   items:
- *                     $ref: '#/components/schemas/Product'
- */
 export const getProducts = async (req, res, next) => {
   try {
     let query = Product.find();    // Base query conditions
@@ -506,69 +321,6 @@ export const getProducts = async (req, res, next) => {
 //   }
 // };
 
-/**
- * @swagger
- * /products/{id}:
- *   get:
- *     summary: Get a single product by ID
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Product ID
- *     responses:
- *       200:
- *         description: Product retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 product:
- *                   $ref: '#/components/schemas/Product'
- *                 nearbyPurchases:
- *                   type: array
- *                   description: For customers, shows nearby started purchases within 2km that they can vote on
- *                   items:
- *                     type: object
- *                     properties:
- *                       purchaseId:
- *                         type: string
- *                         description: ID of the purchase
- *                       startDate:
- *                         type: string
- *                         format: date-time
- *                         description: When the purchase was started
- *                       endDate:
- *                         type: string
- *                         format: date-time
- *                         description: When the purchase will expire
- *                       totalQuantity:
- *                         type: number
- *                         description: Total quantity goal for the purchase
- *                       committedQuantity:
- *                         type: number
- *                         description: Current quantity already committed by customers
- *                       progress:
- *                         type: number
- *                         description: Progress percentage toward target quantity (0-100)
- *                       remainingQuantity:
- *                         type: number
- *                         description: How many more items needed to reach the goal
- *                       distance:
- *                         type: number
- *                         description: Distance in kilometers from the user
- *                       hasVoted:
- *                         type: boolean
- *                         description: Whether the current user has already voted on this purchase
- *       404:
- *         description: Product not found
- */
 export const getProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -649,36 +401,6 @@ export const getProduct = async (req, res, next) => {
   }
 };
 
-/**
- * @swagger
- * /products/{id}:
- *   delete:
- *     summary: Delete a product
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Product ID
- *     responses:
- *       200:
- *         description: Product deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Product not found or unauthorized
- */
 export const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -723,50 +445,6 @@ export const deleteProduct = async (req, res, next) => {
   }
 };
 
-/**
- * @swagger
- * /products/{id}/approve:
- *   patch:
- *     summary: Approve or reject a product (Admin only)
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Product ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - isApproved
- *             properties:
- *               isApproved:
- *                 type: boolean
- *                 description: Approval status
- *     responses:
- *       200:
- *         description: Product approval status updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 product:
- *                   $ref: '#/components/schemas/Product'
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Product not found
- */
 export const approveProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -838,59 +516,6 @@ export const deleteSupplierProducts = async (supplierId) => {
   }
 };
 
-/**
- * @swagger
- * /products/{id}/rate:
- *   post:
- *     summary: Rate a product
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Product ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - rate
- *             properties:
- *               rate:
- *                 type: number
- *                 minimum: 1
- *                 maximum: 5
- *                 description: Rating value (1-5)
- *               comment:
- *                 type: string
- *                 description: Optional review comment
- *     responses:
- *       200:
- *         description: Product rated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 rating:
- *                   type: object
- *                 averageRating:
- *                   type: number
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden - can only rate purchased products
- *       404:
- *         description: Product not found
- */
 export const rateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -967,54 +592,6 @@ export const rateProduct = async (req, res, next) => {
   }
 };
 
-/**
- * @swagger
- * /products/{id}/ratings:
- *   get:
- *     summary: Get all ratings for a product
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Product ID
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Page number for pagination
- *       - in: query
- *         name: sort
- *         schema:
- *           type: string
- *         description: Sort field and order (e.g., -createdAt)
- *     responses:
- *       200:
- *         description: Product ratings retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 averageRating:
- *                   type: number
- *                 ratingsCount:
- *                   type: integer
- *                 currentPage:
- *                   type: integer
- *                 totalPages:
- *                   type: integer
- *                 ratings:
- *                   type: array
- *                   items:
- *                     type: object
- *       404:
- *         description: Product not found
- */
 export const getProductRatings = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -1056,44 +633,6 @@ export const getProductRatings = async (req, res, next) => {
   }
 };
 
-/**
- * @swagger
- * /products/{id}/ratings/{ratingId}:
- *   delete:
- *     summary: Delete a product rating
- *     tags: [Products]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Product ID
- *       - in: path
- *         name: ratingId
- *         required: true
- *         schema:
- *           type: string
- *         description: Rating ID
- *     responses:
- *       200:
- *         description: Product rating deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 averageRating:
- *                   type: number
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Product or rating not found
- */
 export const deleteProductRating = async (req, res, next) => {
   try {
     const { id, ratingId } = req.params;
@@ -1155,65 +694,6 @@ const calculateProductAverageRating = async (productId) => {
   return +(sum / ratings.length).toFixed(1); // Round to 1 decimal place
 };
 
-/**
- * @swagger
- * /products/regular:
- *   get:
- *     summary: Get products that are not in nearby purchases
- *     tags: [Products]
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Page number for pagination
- *       - in: query
- *         name: sort
- *         schema:
- *           type: string
- *         description: Sort field and order (e.g., price,-createdAt)
- *       - in: query
- *         name: minPrice
- *         schema:
- *           type: number
- *         description: Minimum price filter
- *       - in: query
- *         name: maxPrice
- *         schema:
- *           type: number
- *         description: Maximum price filter
- *       - in: query
- *         name: category
- *         schema:
- *           type: string
- *         description: Filter by category ID
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Search term for product name
- *     responses:
- *       200:
- *         description: List of regular products (not in nearby purchases) retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 currentPage:
- *                   type: integer
- *                 totalPages:
- *                   type: integer
- *                 total:
- *                   type: integer
- *                 products:
- *                   type: array
- *                   description: Regular products with no active nearby purchases
- *                   items:
- *                     $ref: '#/components/schemas/Product'
- */
 export const getRegularProducts = async (req, res, next) => {
   try {
     // Base query conditions
@@ -1223,7 +703,6 @@ export const getRegularProducts = async (req, res, next) => {
     if (!req.user || req.userType === "customer" || req.userType === "anonymous") {
       baseConditions.isApproved = true;
     }
-
 
     // Advanced search options
     if (req.query.minPrice) {
@@ -1298,108 +777,6 @@ export const getRegularProducts = async (req, res, next) => {
   }
 };
 
-/**
- * @swagger
- * /products/nearby:
- *   get:
- *     summary: Get products with nearby active purchases
- *     tags: [Products]
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Page number for pagination
- *       - in: query
- *         name: sort
- *         schema:
- *           type: string
- *         description: Sort field and order (e.g., price,-createdAt)
- *       - in: query
- *         name: category
- *         schema:
- *           type: string
- *         description: Filter by category ID
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Search term for product name
- *     responses:
- *       200:
- *         description: List of products with nearby purchases retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 currentPage:
- *                   type: integer
- *                 totalPages:
- *                   type: integer
- *                 total:
- *                   type: integer
- *                 nearbyProducts:
- *                   type: array
- *                   description: Products with active purchases nearby (within 2km)
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                       name:
- *                         type: string
- *                       description:
- *                         type: string
- *                       price:
- *                         type: number
- *                       quantity:
- *                         type: number
- *                       bulkThreshold:
- *                         type: number
- *                       imageSource:
- *                         type: array
- *                         items:
- *                           type: string
- *                       supplierId:
- *                         type: object
- *                       categoryId:
- *                         type: object
- *                       purchaseDetails:
- *                         type: object
- *                         properties:
- *                           purchaseId:
- *                             type: string
- *                             description: ID of the purchase
- *                           startDate:
- *                             type: string
- *                             format: date-time
- *                             description: When the purchase was started
- *                           endDate:
- *                             type: string
- *                             format: date-time
- *                             description: When the purchase will expire
- *                           totalQuantity:
- *                             type: number
- *                             description: Total quantity goal for the purchase
- *                           committedQuantity:
- *                             type: number
- *                             description: Current quantity committed by customers
- *                           progress:
- *                             type: number
- *                             description: Progress percentage toward target quantity (0-100)
- *                           remainingQuantity:
- *                             type: number
- *                             description: How many more items needed to reach the goal
- *                           distance:
- *                             type: number
- *                             description: Distance in kilometers from the user
- *                           hasParticipated:
- *                             type: boolean
- *                             description: Whether current user has participated in this purchase
- */
 export const getNearbyPurchaseProducts = async (req, res, next) => {
   try {
     // Update expired purchases first
@@ -1558,3 +935,4 @@ export const getNearbyPurchaseProducts = async (req, res, next) => {
     next(error);
   }
 };
+

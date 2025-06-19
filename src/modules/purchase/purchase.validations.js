@@ -30,7 +30,6 @@ export const startPurchaseValidation = {
   })
 };
 
-
 export const voteForPurchaseValidation = {
   params: Joi.object({
     productId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().messages({
@@ -65,3 +64,4 @@ export const voteForPurchaseValidation = {
     })
   })
 };
+

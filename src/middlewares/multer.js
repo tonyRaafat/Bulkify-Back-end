@@ -22,3 +22,4 @@ export const multerHost = (customeValidation, cutsomPath = "uploads") => {
   });
   return upload;
 };
+

@@ -6,6 +6,8 @@ import { Product } from "../../../database/models/product.model.js";
 import { ApiFeatures } from "../../utils/apiFeatuers.js";
 import { Customer } from "../../../database/models/customer.model.js";
 import { Supplier } from "../../../database/models/supplier.model.js";
+import Purchase from "../../../database/models/purchase.model.js";
+import { CustomerPurchase } from "../../../database/models/customerPurchase.model.js";
 
 /**
  * Admin login controller
@@ -258,8 +260,6 @@ export const getAllCustomers = async (req, res, next) => {
     next(error);
   }
 };
-
-
 export const getAllSuppliers = async (req, res, next) => {
   try {
     let query = Supplier.find();
@@ -289,4 +289,107 @@ export const getAllSuppliers = async (req, res, next) => {
     next(error);
   }
 };
+export const getAllPurchases = async (req, res, next) => {
+  try {
+    let query = Purchase.find();
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .select();
+
+    const purchases = await apiFeatures.query.populate([
+      {
+        path: "productId",
+        select: "name price imageSource categoryId supplierId",
+        populate: [
+          { path: "categoryId", select: "name" },
+          { path: "supplierId", select: "fullName" },
+        ],
+      },
+    ]);
+
+    // Get customer purchases for each bulk purchase
+    const purchasesWithDetails = await Promise.all(
+      purchases.map(async (purchase) => {
+        const customerPurchases = await CustomerPurchase.find({
+          purchaseId: purchase._id,
+        }).populate("customerId", "firstName lastName email");
+
+        const totalCommitted = customerPurchases.reduce(
+          (sum, cp) => sum + cp.purchaseQuantity,
+          0
+        );
+        const progress = Math.round((totalCommitted / purchase.quantity) * 100);
+
+        return {
+          ...purchase.toObject(),
+          customerPurchases: customerPurchases.length,
+          totalCommittedQuantity: totalCommitted,
+          progress: progress,
+          participants: customerPurchases,
+        };
+      })
+    );
+
+    const total = await Purchase.countDocuments();
+
+    res.status(200).json({
+      message: "Purchases retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      purchases: purchasesWithDetails,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllCustomerPurchases = async (req, res, next) => {
+  try {
+    let query = CustomerPurchase.find();
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .select();
+
+    const customerPurchases = await apiFeatures.query.populate([
+      {
+        path: "customerId",
+        select: "firstName lastName email phoneNumber city street",
+      },
+      {
+        path: "productId",
+        select: "name price imageSource categoryId supplierId",
+        populate: [
+          { path: "categoryId", select: "name" },
+          { path: "supplierId", select: "fullName" },
+        ],
+      },
+      {
+        path: "purchaseId",
+        select: "startDate endDate quantity status userLocation",
+      },
+    ]);
+
+    const total = await CustomerPurchase.countDocuments();
+
+    res.status(200).json({
+      message: "Customer purchases retrieved successfully",
+      currentPage: apiFeatures.page,
+      totalPages: Math.ceil(total / apiFeatures.limit),
+      total,
+      customerPurchases,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 

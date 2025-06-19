@@ -32,3 +32,4 @@ export function errorHandler(error, req, res, next) {
     res.status(statusCode).json(response);
   }
 }
+

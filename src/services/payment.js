@@ -1,7 +1,5 @@
 import Stripe from 'stripe';
 
-
-
 export async function payment({
     payment_method_types = ["card"],
     mode = "payment",
@@ -27,4 +25,5 @@ export async function payment({
     })
     return session
 }
+
 

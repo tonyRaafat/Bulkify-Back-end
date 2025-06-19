@@ -141,3 +141,4 @@ export const syncProductsWithCategories = async (req, res, next) => {
     next(error);
   }
 };
+

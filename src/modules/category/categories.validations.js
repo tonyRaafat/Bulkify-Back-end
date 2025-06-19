@@ -30,3 +30,4 @@ export const getCategorySchema = {
     id: generalField.id,
   }),
 };
+
