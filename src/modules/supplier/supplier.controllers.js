@@ -371,14 +371,11 @@ export const deleteAccount = async (req, res, next) => {
 
 export const allLivePurchases = async (req, res, next) => {
   try {
-    // Get all products for this supplier
     const products = await Product.find({ supplierId: req.user._id });
 
-    // Get the product IDs
     const productIds = products.map(product => product._id);
 
-    // Find all purchases that include these product IDs
-    const livePurchases = await Purchase.find({ productId: { $in: productIds } });
+    const livePurchases = await Purchase.find({ productId: { $in: productIds }, status: "Started" });
 
     return res.status(200).json({
       message: "Live purchases fetched successfully",
