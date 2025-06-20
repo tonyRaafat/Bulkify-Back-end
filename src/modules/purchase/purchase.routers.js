@@ -22,7 +22,7 @@ purchaseRouter.get('/successPayment/:purchaseId/:userId',
   PC.successPaymentForStartPurchase
 )
 
-purchaseRouter.get('/vote/successPayment/:purchaseId/:userId',
+purchaseRouter.get('/vote/successPayment/:purchaseId/:userId/:customerPurchaseId',
   PC.successPaymentForVoting
 )
 
