@@ -345,55 +345,77 @@ export const getProduct = async (req, res, next) => {
     ) {
       throw throwError("Unauthorized access", 403);
     } let nearbyPurchases = null;
+    let hasNearbyPurchases = false;
 
     // Check for nearby purchases if the user is a customer
-    if (req.user && req.userType === "customer" && req.user.coordinates) {
+    if (req.user && req.userType === "customer" && req.user.coordinates && req.user.coordinates.length === 2) {
       const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
+      const now = new Date();
 
-      // Find active purchases for this product
+      // Find active purchases for this product (both Started and Waiting Payment)
       const activePurchases = await Purchase.find({
         productId: id,
-        status: "Started" // Only get purchases that have been started but not completed
-      });      // Filter purchases within 2km of the user
+        status: { $in: [PURCHASE_STATUS.STARTED, PURCHASE_STATUS.WAITING_PAYMENT] },
+        endDate: { $gt: now } // Only non-expired purchases
+      });
+
+      // Filter purchases within 2km of the user
       const nearbyPurchasesList = activePurchases.filter(purchase => {
+        if (!purchase.userLocation || purchase.userLocation.length !== 2) {
+          return false;
+        }
         const distance = haversineDistance(userCoords, purchase.userLocation);
         return distance <= 2; // 2km radius
       });
 
-      // Get customer purchase data for each nearby purchase
-      const { CustomerPurchase } = await import("../../../database/models/customerPurchase.model.js");
+      hasNearbyPurchases = nearbyPurchasesList.length > 0;
 
-      nearbyPurchases = await Promise.all(nearbyPurchasesList.map(async purchase => {
-        // Calculate current committed quantity
-        const customerPurchases = await CustomerPurchase.find({
-          purchaseId: purchase._id,
-          status: { $in: ["Pending", "Completed"] }
-        });
+      if (hasNearbyPurchases) {
+        // Get customer purchase data for each nearby purchase
+        const { CustomerPurchase } = await import("../../../database/models/customerPurchase.model.js");
 
-        const committedQuantity = customerPurchases.reduce((total, cp) => total + cp.purchaseQuantity, 0);
-        // Check if current user has already voted on this purchase
-        const hasUserVoted = req.user ? await CustomerPurchase.exists({
-          purchaseId: purchase._id,
-          customerId: req.user._id
-        }) : false;
+        nearbyPurchases = await Promise.all(nearbyPurchasesList.map(async purchase => {
+          // Calculate current committed quantity
+          const customerPurchases = await CustomerPurchase.find({
+            purchaseId: purchase._id,
+            status: { $in: [CUSTOMER_PURCHASE_STATUS.PENDING, CUSTOMER_PURCHASE_STATUS.COMPLETED] }
+          });
 
-        return {
-          purchaseId: purchase._id,
-          startDate: purchase.startDate,
-          endDate: purchase.endDate,
-          totalQuantity: purchase.quantity, // Target quantity
-          committedQuantity, // Current committed quantity
-          progress: Math.round((committedQuantity / purchase.quantity) * 100), // Progress percentage
-          remainingQuantity: Math.max(0, purchase.quantity - committedQuantity),
-          distance: parseFloat(haversineDistance(userCoords, purchase.userLocation).toFixed(2)),
-          hasVoted: !!hasUserVoted
-        };
-      }));
+          const committedQuantity = customerPurchases.reduce((total, cp) => total + cp.purchaseQuantity, 0);
+          
+          // Check if current user has already participated in this purchase
+          const userParticipation = await CustomerPurchase.findOne({
+            purchaseId: purchase._id,
+            customerId: req.user._id
+          });
+
+          const distance = haversineDistance(userCoords, purchase.userLocation);
+
+          return {
+            purchaseId: purchase._id,
+            startDate: purchase.startDate,
+            endDate: purchase.endDate,
+            totalQuantity: purchase.quantity, // Target quantity
+            committedQuantity, // Current committed quantity
+            progress: Math.round((committedQuantity / purchase.quantity) * 100), // Progress percentage
+            remainingQuantity: Math.max(0, purchase.quantity - committedQuantity),
+            distance: parseFloat(distance.toFixed(2)),
+            hasVoted: !!userParticipation,
+            userPurchaseStatus: userParticipation ? userParticipation.status : null,
+            userPurchaseQuantity: userParticipation ? userParticipation.purchaseQuantity : 0,
+            status: purchase.status
+          };
+        }));
+
+        // Sort by distance (closest first)
+        nearbyPurchases.sort((a, b) => a.distance - b.distance);
+      }
     }
 
     res.status(200).json({
       message: "Product retrieved successfully",
       product,
+      hasNearbyPurchases,
       nearbyPurchases: nearbyPurchases || []
     });
   } catch (error) {

@@ -186,13 +186,13 @@ export const successPaymentForStartPurchase = async (req, res, next) => {
     }
 
     // 3. Update Purchase status
-    purchase.status = "Started";
+    purchase.status = CUSTOMER_PURCHASE_STATUS.COMPLETED;
     await purchase.save();
 
     // 4. Update CustomerPurchase status
     await CustomerPurchase.updateOne(
-      { purchaseId: purchaseId, customerId: userId },
-      { status: "Pending" }
+      { purchaseId: purchaseId, customerId: userId, status: CUSTOMER_PURCHASE_STATUS.PENDING },
+      { status: CUSTOMER_PURCHASE_STATUS.COMPLETED }
     );
 
     // 5. Get Customer Purchase Info to Generate Invoice
