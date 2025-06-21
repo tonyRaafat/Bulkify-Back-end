@@ -106,7 +106,8 @@ export const startPurchase = async (req, res, next) => {
     for (let purchase of purchases) {
       if (
         haversineDistance(userLocation, purchase.userLocation) <= 2 &&
-        purchase.status != "Waiting Payment"
+        purchase.status != CUSTOMER_PURCHASE_STATUS.WAITING_PAYMENT || 
+        purchase.status != CUSTOMER_PURCHASE_STATUS.ENDED_WITHOUT_PURCHASE
       ) {
         return res
           .status(403)
