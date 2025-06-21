@@ -374,7 +374,7 @@ export const allLivePurchases = async (req, res, next) => {
 
     const productIds = products.map(product => product._id);
 
-    const livePurchases = await Purchase.find({ productId: { $in: productIds }, status: CUSTOMER_PURCHASE_STATUS.PENDING}).populate("productId");
+    const livePurchases = await Purchase.find({ productId: { $in: productIds }, status:'Started'}).populate("productId");
     
     return res.status(200).json({
       message: "Live purchases fetched successfully",
