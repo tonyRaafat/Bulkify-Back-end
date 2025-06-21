@@ -740,26 +740,9 @@ export const getRegularProducts = async (req, res, next) => {
       baseConditions.categoryId = req.query.category;
     }
 
-    const query = Product.find(baseConditions);
-
-    // Apply API features
-    const apiFeatures = new ApiFeatures(query, req.query)
-      .pagination()
-      .filter()
-      .sort()
-      .search(["name"])
-      .select();
-
-    // Fetch all products based on query
-    let products = await apiFeatures.query.populate([
-      { path: "supplierId", select: "fullName supplierRate" },
-      { path: "categoryId", select: "name" },
-    ]);
-
-    // Get total count for pagination
-    const total = await Product.countDocuments(baseConditions);
-      // For customers with coordinates, filter out products with nearby purchases
-    if (req.user && req.userType === "customer" && req.user.coordinates) {
+    // For customers with coordinates, exclude products with nearby purchases
+    let excludedProductIds = [];
+    if (req.user && req.userType === "customer" && req.user.coordinates && req.user.coordinates.length === 2) {
       // Get user coordinates
       const userCoords = [req.user.coordinates[0], req.user.coordinates[1]]; // [longitude, latitude]
       
@@ -772,20 +755,42 @@ export const getRegularProducts = async (req, res, next) => {
 
       // Filter purchases to those within 2km of the user
       const nearbyPurchases = activePurchases.filter(purchase => {
+        if (!purchase.userLocation || purchase.userLocation.length !== 2) {
+          return false;
+        }
         const distance = haversineDistance(userCoords, purchase.userLocation);
         return distance <= 2; // 2km radius
       });
 
       // Get product IDs with nearby purchases to exclude them
-      const productsWithNearbyPurchases = new Set(nearbyPurchases.map(purchase =>
-        purchase.productId._id.toString()
-      ));
-
-      // Filter out products that have nearby purchases
-      products = products.filter(product =>
-        !productsWithNearbyPurchases.has(product._id.toString())
-      );
+      excludedProductIds = nearbyPurchases
+        .map(purchase => purchase.productId?._id?.toString())
+        .filter(Boolean); // Remove any undefined/null values
     }
+
+    // Add exclusion condition if there are products to exclude
+    if (excludedProductIds.length > 0) {
+      baseConditions._id = { $nin: excludedProductIds };
+    }
+
+    const query = Product.find(baseConditions);
+
+    // Apply API features
+    const apiFeatures = new ApiFeatures(query, req.query)
+      .pagination()
+      .filter()
+      .sort()
+      .search(["name"])
+      .select();
+
+    // Fetch products based on query
+    const products = await apiFeatures.query.populate([
+      { path: "supplierId", select: "fullName supplierRate" },
+      { path: "categoryId", select: "name" },
+    ]);
+
+    // Get total count for pagination based on filtered conditions
+    const total = await Product.countDocuments(baseConditions);
 
     res.status(200).json({
       message: "Regular products retrieved successfully",
