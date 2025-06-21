@@ -6,6 +6,7 @@ import { sendEmail, sendVerificationEmail } from "../../utils/emailService.js";
 import { deleteSupplierProducts } from "../product/products.controllers.js";
 import { Product } from "../../../database/models/product.model.js";
 import Purchase from "../../../database/models/purchase.model.js";
+import { CUSTOMER_PURCHASE_STATUS } from "../../constants/constants.js";
 
 const BASE_URL = "https://bulkify-back-end.vercel.app";
 
@@ -373,8 +374,8 @@ export const allLivePurchases = async (req, res, next) => {
 
     const productIds = products.map(product => product._id);
 
-    const livePurchases = await Purchase.find({ productId: { $in: productIds }, status: "Started" });
-
+    const livePurchases = await Purchase.find({ productId: { $in: productIds }, status: CUSTOMER_PURCHASE_STATUS.PENDING}).populate("productId");
+    
     return res.status(200).json({
       message: "Live purchases fetched successfully",
       total: livePurchases.length,
